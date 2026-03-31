@@ -1,15 +1,22 @@
+# Сборка и кэш
+build/
+.gradle/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Локальные настройки (САМОЕ ВАЖНОЕ!)
+local.properties
+
+# Настройки Android Studio (IntelliJ IDEA)
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
+/.idea/caches/
+/.idea/libraries/
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+
+# Системные файлы macOS / Windows
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+Thumbs.db
