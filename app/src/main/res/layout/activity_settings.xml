@@ -5,15 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/yp_white">
+    android:background="@color/screen_background_color"> <!-- ИСПРАВЛЕНО ЗДЕСЬ -->
 
     <!-- Хедер с кнопкой назад -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        style="@style/SettingsItemContainerStyle">
 
         <ImageView
             android:id="@+id/back_button"
@@ -21,33 +17,26 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_arrow_back_24"
             android:layout_marginEnd="@dimen/padding_standard"
-            app:tint="@color/yp_black" />
+            app:tint="@color/primary_text_color" /> <!-- ИСПРАВЛЕНО ЗДЕСЬ -->
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/settings"
-            android:textColor="@color/yp_black"
+            android:textColor="@color/primary_text_color"
             android:textSize="@dimen/text_size_title"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:fontFamily="@font/ys_display_medium" />
     </LinearLayout>
 
     <!-- Темная тема (со свитчом) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:layout_marginTop="24dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        style="@style/SettingsItemContainerStyle"
+        android:layout_marginTop="24dp">
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dark_theme"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
+            style="@style/SettingsItemTextStyle"
+            android:text="@string/dark_theme"/>
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:layout_width="wrap_content"
@@ -57,69 +46,45 @@
 
     <!-- Поделиться приложением -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:id="@+id/share_button"
+        style="@style/SettingsItemContainerStyle">
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/share_app"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
+            style="@style/SettingsItemTextStyle"
+            android:text="@string/share_app"/>
 
         <ImageView
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
+            style="@style/SettingsItemIconStyle"
             android:src="@drawable/ic_share_24"
             app:tint="@color/yp_text_gray" />
     </LinearLayout>
 
     <!-- Написать в поддержку -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:id="@+id/support_button"
+        style="@style/SettingsItemContainerStyle">
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/support"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
+            style="@style/SettingsItemTextStyle"
+            android:text="@string/support"/>
 
         <ImageView
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
+            style="@style/SettingsItemIconStyle"
             android:src="@drawable/ic_support_24"
             app:tint="@color/yp_text_gray" />
     </LinearLayout>
 
     <!-- Пользовательское соглашение -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:id="@+id/terms_button"
+        style="@style/SettingsItemContainerStyle">
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/user_agreement"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
+            style="@style/SettingsItemTextStyle"
+            android:text="@string/user_agreement"/>
 
         <ImageView
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
+            style="@style/SettingsItemIconStyle"
             android:src="@drawable/ic_arrow_forward_24"
             app:tint="@color/yp_text_gray" />
     </LinearLayout>
