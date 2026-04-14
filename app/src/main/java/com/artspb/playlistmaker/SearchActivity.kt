@@ -4,88 +4,89 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+// Импортировал для удобной работы с видимостью (совет ревьюера)
+import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 
 class SearchActivity : AppCompatActivity() {
 
-    // Переменная для хранения текста поискового запроса. По умолчанию она пустая.
     private var searchText: String = SEARCH_DEF
-
-    // Выносим EditText в свойства класса (lateinit), чтобы иметь к нему доступ
-    // не только в onCreate, но и в методе onRestoreInstanceState.
     private lateinit var inputEditText: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 1. Включаю EdgeToEdge (современный дизайн с 15 Android), чтобы приложение
+        // рисовалось на весь экран, залезая под статус-бар и нижнюю панель навигации.
+        enableEdgeToEdge()
+
         setContentView(R.layout.activity_search)
 
-        val btnBack = findViewById<ImageView>(R.id.btnBack)
+        // 2. Настраиваю отступы, чтобы мой Toolbar не уехал под системные часы и батарею.
+        // Ищу корневой элемент (у него id main в xml) и сдвигаю его содержимое вниз на высоту статус-бара.
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
+            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            view.updatePadding(top = statusBar.top)
+            insets
+        }
+
+        // 3. Инициализация UI элементов
+        // Вместо кастомной кнопки назад теперь использую стандартный MaterialToolbar
+        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)
         val clearIcon = findViewById<ImageView>(R.id.clearIcon)
 
-        // Закрываем экран при нажатии на стрелку "Назад"
-        btnBack.setOnClickListener {
+        // Обработка клика "Назад" теперь висит на тулбаре
+        toolbar.setNavigationOnClickListener {
             finish()
         }
 
-        // Очищаем поле и прячем клавиатуру при нажатии на крестик
+        // Очистка поля и скрытие клавиатуры
         clearIcon.setOnClickListener {
             inputEditText.setText("")
             val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
         }
 
-        // Слежу за тем, что вводит пользователь
+        // Отслеживаем ввод текста
         val simpleTextWatcher = object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                // Ничего не делаю
-            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // 1. Сохраняем текущий текст в нашу переменную (согласно заданию)
-                // Если s null, запишется пустая строка (благодаря оператору ?: "")
+                // Сохраняю текущий текст для onSaveInstanceState
                 searchText = s?.toString() ?: ""
 
-                // 2. Управляем видимостью крестика
-                if (s.isNullOrEmpty()) {
-                    clearIcon.visibility = View.GONE
-                } else {
-                    clearIcon.visibility = View.VISIBLE
-                }
+                // Управляю крестиком. Ревьюер посоветовал использовать isVisible вместо if/else.
+                // Крестик виден (true), если текст НЕ пустой и НЕ null.
+                clearIcon.isVisible = !s.isNullOrEmpty()
             }
 
-            override fun afterTextChanged(s: Editable?) {
-                // Ничего не делаю
-            }
+            override fun afterTextChanged(s: Editable?) {}
         }
 
-        // Подключаю слушатель к полю ввода
         inputEditText.addTextChangedListener(simpleTextWatcher)
     }
 
-    // Метод вызывается ПЕРЕД тем, как Activity будет уничтожена (например, при перевороте экрана)
+    // Сохраняю текст при повороте экрана
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        // Кладем нашу строку в "чемодан" Bundle под уникальным ключом
         outState.putString(SEARCH_TEXT, searchText)
     }
 
-    // Метод вызывается ПОСЛЕ того, как Activity была пересоздана, если в "чемодане" что-то есть
+    // Восстанавливаю текст после поворота экрана
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        // Достаем строку из Bundle. Если по ключу ничего нет, используем значение по умолчанию (SEARCH_DEF)
         searchText = savedInstanceState.getString(SEARCH_TEXT, SEARCH_DEF)
-
-        // Устанавливаем восстановленный текст обратно в поле ввода
         inputEditText.setText(searchText)
     }
 
-    // companion object - это аналог статических переменных в Java.
-    // Здесь мы храним константы, чтобы не хардкодить ключи в коде.
     companion object {
         const val SEARCH_TEXT = "SEARCH_TEXT"
         const val SEARCH_DEF = ""

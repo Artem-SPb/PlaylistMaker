@@ -1,92 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/screen_background_color"> <!-- ИСПРАВЛЕНО ЗДЕСЬ -->
+    android:background="@color/screen_background_color">
 
-    <!-- Хедер с кнопкой назад -->
-    <LinearLayout
-        style="@style/SettingsItemContainerStyle">
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="@string/settings"
+        app:titleTextAppearance="@style/SettingsItemTextStyle"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:navigationIconTint="@color/primary_text_color" />
 
-        <ImageView
-            android:id="@+id/back_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_back_24"
-            android:layout_marginEnd="@dimen/padding_standard"
-            app:tint="@color/primary_text_color" /> <!-- ИСПРАВЛЕНО ЗДЕСЬ -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/themeSwitcher"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/dark_theme"
+        android:textAppearance="@style/SettingsItemTextStyle" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/settings"
-            android:textColor="@color/primary_text_color"
-            android:textSize="@dimen/text_size_title"
-            android:textStyle="bold"
-            android:fontFamily="@font/ys_display_medium" />
-    </LinearLayout>
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/btnShare"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/share_app"
+        android:textAppearance="@style/SettingsItemTextStyle"
+        app:drawableEndCompat="@drawable/ic_share_24" />
 
-    <!-- Темная тема (со свитчом) -->
-    <LinearLayout
-        style="@style/SettingsItemContainerStyle"
-        android:layout_marginTop="24dp">
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/btnSupport"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/support"
+        android:textAppearance="@style/SettingsItemTextStyle"
+        app:drawableEndCompat="@drawable/ic_support_24" />
 
-        <TextView
-            style="@style/SettingsItemTextStyle"
-            android:text="@string/dark_theme"/>
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true" />
-    </LinearLayout>
-
-    <!-- Поделиться приложением -->
-    <LinearLayout
-        android:id="@+id/share_button"
-        style="@style/SettingsItemContainerStyle">
-
-        <TextView
-            style="@style/SettingsItemTextStyle"
-            android:text="@string/share_app"/>
-
-        <ImageView
-            style="@style/SettingsItemIconStyle"
-            android:src="@drawable/ic_share_24"
-            app:tint="@color/yp_text_gray" />
-    </LinearLayout>
-
-    <!-- Написать в поддержку -->
-    <LinearLayout
-        android:id="@+id/support_button"
-        style="@style/SettingsItemContainerStyle">
-
-        <TextView
-            style="@style/SettingsItemTextStyle"
-            android:text="@string/support"/>
-
-        <ImageView
-            style="@style/SettingsItemIconStyle"
-            android:src="@drawable/ic_support_24"
-            app:tint="@color/yp_text_gray" />
-    </LinearLayout>
-
-    <!-- Пользовательское соглашение -->
-    <LinearLayout
-        android:id="@+id/terms_button"
-        style="@style/SettingsItemContainerStyle">
-
-        <TextView
-            style="@style/SettingsItemTextStyle"
-            android:text="@string/user_agreement"/>
-
-        <ImageView
-            style="@style/SettingsItemIconStyle"
-            android:src="@drawable/ic_arrow_forward_24"
-            app:tint="@color/yp_text_gray" />
-    </LinearLayout>
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/btnAgreement"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/user_agreement"
+        android:textAppearance="@style/SettingsItemTextStyle"
+        app:drawableEndCompat="@drawable/ic_arrow_forward_24" />
 
 </LinearLayout>
