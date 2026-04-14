@@ -1,127 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/yp_white">
+    android:background="@color/screen_background_color">
 
-    <!-- Хедер с кнопкой назад -->
-    <LinearLayout
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:layout_height="?attr/actionBarSize"
+        app:title="@string/settings"
+        app:titleTextAppearance="@style/SettingsItemTextStyle"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:navigationIconTint="@color/primary_text_color" />
 
-        <ImageView
-            android:id="@+id/back_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_back_24"
-            android:layout_marginEnd="@dimen/padding_standard"
-            app:tint="@color/yp_black" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/settings"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_title"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Темная тема (со свитчом) -->
-    <LinearLayout
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/themeSwitcher"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:layout_marginTop="24dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/dark_theme"
+        android:textAppearance="@style/SettingsItemTextStyle" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dark_theme"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true" />
-    </LinearLayout>
-
-    <!-- Поделиться приложением -->
-    <LinearLayout
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/btnShare"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/share_app"
+        android:textAppearance="@style/SettingsItemTextStyle"
+        app:drawableEndCompat="@drawable/ic_share_24" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/share_app"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
-
-        <ImageView
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
-            android:src="@drawable/ic_share_24"
-            app:tint="@color/yp_text_gray" />
-    </LinearLayout>
-
-    <!-- Написать в поддержку -->
-    <LinearLayout
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/btnSupport"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/support"
+        android:textAppearance="@style/SettingsItemTextStyle"
+        app:drawableEndCompat="@drawable/ic_support_24" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/support"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
-
-        <ImageView
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
-            android:src="@drawable/ic_support_24"
-            app:tint="@color/yp_text_gray" />
-    </LinearLayout>
-
-    <!-- Пользовательское соглашение -->
-    <LinearLayout
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/btnAgreement"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/settings_item_height"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/padding_standard"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/user_agreement"
-            android:textColor="@color/yp_black"
-            android:textSize="@dimen/text_size_regular" />
-
-        <ImageView
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
-            android:src="@drawable/ic_arrow_forward_24"
-            app:tint="@color/yp_text_gray" />
-    </LinearLayout>
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="20dp"
+        android:text="@string/user_agreement"
+        android:textAppearance="@style/SettingsItemTextStyle"
+        app:drawableEndCompat="@drawable/ic_arrow_forward_24" />
 
 </LinearLayout>

@@ -7,4 +7,11 @@
     <dimen name="text_size_regular">16sp</dimen>
     <dimen name="icon_size">24dp</dimen>
     <dimen name="settings_item_height">60dp</dimen>
+
+    <dimen name="toolbar_height">56dp</dimen>
+    <dimen name="search_field_height">36dp</dimen>
+    <dimen name="search_field_margin_top">8dp</dimen>
+    <dimen name="search_field_padding_horizontal">12dp</dimen>
+    <dimen name="search_field_text_padding">8dp</dimen>
+    <dimen name="search_field_corner_radius">8dp</dimen>
 </resources>
