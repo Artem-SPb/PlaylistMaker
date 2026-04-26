@@ -18,4 +18,5 @@
     <string name="support_message">Спасибо разработчикам и разработчицам за крутое приложение!</string>
     <string name="practicum_offer_link">https://yandex.ru/legal/practicum_offer/</string>
 
+    <string name="track_description_separator">&#8226;</string>
 </resources>

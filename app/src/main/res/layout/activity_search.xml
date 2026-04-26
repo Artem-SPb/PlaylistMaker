@@ -55,4 +55,12 @@
             android:visibility="gone"
             app:tint="@color/search_hint_color" />
     </FrameLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/trackRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="@dimen/padding_standard"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/track_item" />
 </LinearLayout>
