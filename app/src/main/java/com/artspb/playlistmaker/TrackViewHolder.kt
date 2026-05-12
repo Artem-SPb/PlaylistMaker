@@ -7,6 +7,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import java.text.SimpleDateFormat // НОВОЕ: Импортируем форматтер
+import java.util.Locale // НОВОЕ: Импортируем локаль
 
 // Я передаю ViewGroup в конструктор и сразу делаю inflate разметки track_item,
 class TrackViewHolder(parentView: ViewGroup) : RecyclerView.ViewHolder(
@@ -24,7 +26,10 @@ class TrackViewHolder(parentView: ViewGroup) : RecyclerView.ViewHolder(
     fun bind(model: Track) {
         trackName.text = model.trackName
         artistName.text = model.artistName
-        trackTime.text = model.trackTime
+
+        // НОВОЕ: Форматирую время из миллисекунд в строку формата "mm:ss"
+        // Locale.getDefault() нужен для того, чтобы формат корректно работал на разных языках системы
+        trackTime.text = SimpleDateFormat("mm:ss", Locale.getDefault()).format(model.trackTimeMillis)
 
         // Я использую Glide для асинхронной загрузки обложки по URL.
         // Передаю itemView в метод with() по правилам ТЗ.
@@ -39,3 +44,4 @@ class TrackViewHolder(parentView: ViewGroup) : RecyclerView.ViewHolder(
             .into(trackCover)
     }
 }
+

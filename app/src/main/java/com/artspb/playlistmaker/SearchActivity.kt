@@ -5,9 +5,13 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -15,81 +19,84 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class SearchActivity : AppCompatActivity() {
 
-    // Я создаю Mock-объект (тестовый список треков), чтобы настроить и проверить работу RecyclerView
-    // до того, как мы начнем получать реальные данные из сети.
-    private val trackList: ArrayList<Track> = arrayListOf(
-        Track(
-            "Smells Like Teen Spirit",
-            "Nirvana",
-            "5:01",
-            "https://is5-ssl.mzstatic.com/image/thumb/Music115/v4/7b/58/c2/7b58c21a-2b51-2bb2-e59a-9bb9b96ad8c3/00602567924166.rgb.jpg/100x100bb.jpg"
-        ),
-        Track(
-            "Billie Jean",
-            "Michael Jackson",
-            "4:35",
-            "https://is5-ssl.mzstatic.com/image/thumb/Music125/v4/3d/9d/38/3d9d3811-71f0-3a0e-1ada-3004e56ff852/827969428726.jpg/100x100bb.jpg"
-        ),
-        Track(
-            "Stayin' Alive",
-            "Bee Gees",
-            "4:10",
-            "https://is4-ssl.mzstatic.com/image/thumb/Music115/v4/1f/80/1f/1f801fc1-8c0f-ea3e-d3e5-387c6619619e/16UMGIM86640.rgb.jpg/100x100bb.jpg"
-        ),
-        Track(
-            "Whole Lotta Love",
-            "Led Zeppelin",
-            "5:33",
-            "https://is2-ssl.mzstatic.com/image/thumb/Music62/v4/7e/17/e3/7e17e33f-2efa-2a36-e916-7f808576cf6b/mzm.fyigqcbs.jpg/100x100bb.jpg"
-        ),
-        Track(
-            "Sweet Child O'Mine",
-            "Guns N' Roses",
-            "5:03",
-            "https://is5-ssl.mzstatic.com/image/thumb/Music125/v4/a0/4d/c4/a04dc484-03cc-02aa-fa82-5334fcb4bc16/18UMGIM24878.rgb.jpg/100x100bb.jpg"
-        )
-    )
+    // 1. Инициализирую Retrofit и API сервис для поиска в iTunes
+    private val itunesBaseUrl = "https://itunes.apple.com"
+    private val retrofit = Retrofit.Builder()
+        .baseUrl(itunesBaseUrl)
+        .addConverterFactory(GsonConverterFactory.create()) // Подключаю Gson для парсинга JSON
+        .build()
+    private val itunesService = retrofit.create(ItunesApi::class.java)
+
+    // Теперь это просто пустой список, который будет заполняться реальными данными из сети
+    private val trackList = ArrayList<Track>()
+    private lateinit var trackAdapter: TrackAdapter
 
     private var searchText: String = SEARCH_DEF
     private lateinit var inputEditText: EditText
+    private lateinit var trackRecyclerView: RecyclerView
+
+    // UI-элементы для заглушек (плейсхолдеров)
+    private lateinit var placeholderContainer: LinearLayout
+    private lateinit var placeholderImage: ImageView
+    private lateinit var placeholderMessage: TextView
+    private lateinit var refreshButton: Button
+
+    // Переменная для сохранения последнего запроса. Нужна для работы кнопки "Обновить" при ошибке сети.
+    private var lastSearchQuery = ""
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Включаю EdgeToEdge (современный дизайн с 15 Android), чтобы приложение
-        // рисовалось на весь экран, залезая под статус-бар и нижнюю панель навигации.
+        // Включаю EdgeToEdge, чтобы приложение рисовалось под статус-баром
         enableEdgeToEdge()
-
         setContentView(R.layout.activity_search)
 
-        // 2. Настраиваю отступы, чтобы мой Toolbar не уехал под системные часы и батарею.
-        // Ищу корневой элемент (у него id main в xml) и сдвигаю его содержимое вниз на высоту статус-бара.
+        // Настраиваю отступы для корневого элемента, чтобы контент не перекрывался системными иконками
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
             val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             view.updatePadding(top = statusBar.top)
             insets
         }
 
-        // 3. Инициализация UI элементов
-        // Вместо кастомной кнопки назад теперь использую стандартный MaterialToolbar
+        // Инициализация всех View элементов
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)
         val clearIcon = findViewById<ImageView>(R.id.clearIcon)
+        trackRecyclerView = findViewById(R.id.trackRecyclerView)
 
-        // Обработка клика "Назад" теперь висит на тулбаре
+        placeholderContainer = findViewById(R.id.placeholderContainer)
+        placeholderImage = findViewById(R.id.placeholderImage)
+        placeholderMessage = findViewById(R.id.placeholderMessage)
+        refreshButton = findViewById(R.id.refreshButton)
+
+        // Настройка RecyclerView и адаптера
+        trackAdapter = TrackAdapter(trackList)
+        trackRecyclerView.adapter = trackAdapter
+
+        // Кнопка "Назад" в тулбаре
         toolbar.setNavigationOnClickListener {
             finish()
         }
 
-        // Очистка поля и скрытие клавиатуры
+        // Очистка поля ввода по нажатию на крестик
         clearIcon.setOnClickListener {
             inputEditText.setText("")
             val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
+
+            // По ТЗ: при нажатии на крестик мы также должны очистить список треков и скрыть плейсхолдеры
+            trackList.clear()
+            trackAdapter.notifyDataSetChanged()
+            showPlaceholder(PlaceholderState.SUCCESS) // Успешное (пустое) состояние без заглушек
         }
 
         // Отслеживаем ввод текста
@@ -97,31 +104,92 @@ class SearchActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // Сохраняю текущий текст для onSaveInstanceState
                 searchText = s?.toString() ?: ""
-
-                // Управляю крестиком. Ревьюер посоветовал использовать isVisible вместо if/else.
-                // Крестик виден (true), если текст НЕ пустой и НЕ null.
                 clearIcon.isVisible = !s.isNullOrEmpty()
             }
 
             override fun afterTextChanged(s: Editable?) {}
         }
-
         inputEditText.addTextChangedListener(simpleTextWatcher)
 
-        // --- ДОБАВЛЯЕМ НАСТРОЙКУ RECYCLERVIEW ---
-        // Нахожу RecyclerView в разметке экрана по его ID
-        val trackRecyclerView = findViewById<RecyclerView>(R.id.trackRecyclerView)
+        // --- НОВОЕ: Обработка кнопки "Done" (Enter) на клавиатуре ---
+        inputEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                if (inputEditText.text.isNotEmpty()) {
+                    searchTracks(inputEditText.text.toString())
+                }
+                true
+            } else {
+                false
+            }
+        }
 
-        // Создаю экземпляр нашего TrackAdapter и передаю в него Mock-список треков.
-        val trackAdapter = TrackAdapter(trackList)
+        // --- НОВОЕ: Обработка кнопки "Обновить" при ошибке сети ---
+        refreshButton.setOnClickListener {
+            searchTracks(lastSearchQuery)
+        }
+    }
 
-        // Связываю RecyclerView с адаптером.
-        // Теперь список знает, откуда брать данные и как их отрисовывать на экране.
-        trackRecyclerView.adapter = trackAdapter
-        // ----------------------------------------
+    // Метод для выполнения сетевого запроса к iTunes
+    private fun searchTracks(query: String) {
+        lastSearchQuery = query // Сохраняем запрос на случай, если придется его повторить
 
+        // При запуске поиска прячем клавиатуру (улучшаем UX)
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
+
+        itunesService.search(query).enqueue(object : Callback<TrackResponse> {
+            override fun onResponse(call: Call<TrackResponse>, response: Response<TrackResponse>) {
+                if (response.code() == 200) {
+                    trackList.clear()
+                    if (response.body()?.results?.isNotEmpty() == true) {
+                        // Успех: треки найдены
+                        trackList.addAll(response.body()?.results!!)
+                        trackAdapter.notifyDataSetChanged()
+                        showPlaceholder(PlaceholderState.SUCCESS)
+                    } else {
+                        // Успех: сервер ответил, но ничего не найдено по этому запросу
+                        trackAdapter.notifyDataSetChanged()
+                        showPlaceholder(PlaceholderState.NOT_FOUND)
+                    }
+                } else {
+                    // Сервер вернул ошибку (код отличный от 200)
+                    showPlaceholder(PlaceholderState.ERROR)
+                }
+            }
+
+            override fun onFailure(call: Call<TrackResponse>, t: Throwable) {
+                // Ошибка сети (интернет отключен, таймаут)
+                showPlaceholder(PlaceholderState.ERROR)
+            }
+        })
+    }
+
+    // Централизованное управление видимостью элементов экрана (Best Practice)
+    // Я использую Enum, чтобы избежать путаницы с множеством if/else для visibility
+    private fun showPlaceholder(state: PlaceholderState) {
+        when (state) {
+            PlaceholderState.SUCCESS -> {
+                trackRecyclerView.isVisible = true
+                placeholderContainer.isVisible = false
+            }
+            PlaceholderState.NOT_FOUND -> {
+                trackRecyclerView.isVisible = false
+                placeholderContainer.isVisible = true
+                refreshButton.isVisible = false // Кнопка "Обновить" здесь не нужна
+
+                placeholderImage.setImageResource(R.drawable.ic_nothing_found)
+                placeholderMessage.text = getString(R.string.nothing_found)
+            }
+            PlaceholderState.ERROR -> {
+                trackRecyclerView.isVisible = false
+                placeholderContainer.isVisible = true
+                refreshButton.isVisible = true // Показываем кнопку "Обновить"
+
+                placeholderImage.setImageResource(R.drawable.ic_network_error)
+                placeholderMessage.text = getString(R.string.network_error)
+            }
+        }
     }
 
     // Сохраняю текст при повороте экрана
@@ -137,8 +205,14 @@ class SearchActivity : AppCompatActivity() {
         inputEditText.setText(searchText)
     }
 
+    // Enum-класс для возможных состояний экрана
+    enum class PlaceholderState {
+        SUCCESS, NOT_FOUND, ERROR
+    }
+
     companion object {
         const val SEARCH_TEXT = "SEARCH_TEXT"
         const val SEARCH_DEF = ""
     }
 }
+
