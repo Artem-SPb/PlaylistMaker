@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/track_item_padding">
+
+    <ImageView
+        android:id="@+id/trackCover"
+        android:layout_width="@dimen/track_cover_size"
+        android:layout_height="@dimen/track_cover_size"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@tools:sample/avatars" />
+
+    <ImageView
+        android:id="@+id/forwardArrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_arrow_forward_24"
+        app:tint="@color/secondary_text_color"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/trackName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/track_info_margin_start"
+        android:layout_marginEnd="@dimen/track_item_padding"
+        android:ellipsize="end"
+        android:fontFamily="@font/ys_display_regular"
+        android:maxLines="1"
+        android:textColor="@color/primary_text_color"
+        android:textSize="@dimen/text_size_regular"
+        app:layout_constraintBottom_toTopOf="@+id/artistName"
+        app:layout_constraintEnd_toStartOf="@+id/forwardArrow"
+        app:layout_constraintStart_toEndOf="@+id/trackCover"
+        app:layout_constraintTop_toTopOf="@+id/trackCover"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Yesterday (Remastered 2009)" />
+
+    <TextView
+        android:id="@+id/artistName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/track_description_margin_top"
+        android:ellipsize="end"
+        android:fontFamily="@font/ys_display_regular"
+        android:maxLines="1"
+        android:textColor="@color/secondary_text_color"
+        android:textSize="@dimen/track_description_text_size"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="@+id/trackCover"
+        app:layout_constraintEnd_toStartOf="@+id/dotSeparator"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@+id/trackName"
+        app:layout_constraintTop_toBottomOf="@+id/trackName"
+        tools:text="The Beatles" />
+
+    <TextView
+        android:id="@+id/dotSeparator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/track_dot_margin_horizontal"
+        android:fontFamily="@font/ys_display_regular"
+        android:text="@string/track_description_separator"
+        android:textColor="@color/secondary_text_color"
+        android:textSize="@dimen/track_description_text_size"
+        app:layout_constraintBottom_toBottomOf="@+id/artistName"
+        app:layout_constraintEnd_toStartOf="@+id/trackTime"
+        app:layout_constraintStart_toEndOf="@+id/artistName"
+        app:layout_constraintTop_toTopOf="@+id/artistName" />
+
+    <TextView
+        android:id="@+id/trackTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/track_item_padding"
+        android:fontFamily="@font/ys_display_regular"
+        android:textColor="@color/secondary_text_color"
+        android:textSize="@dimen/track_description_text_size"
+        app:layout_constraintBottom_toBottomOf="@+id/artistName"
+        app:layout_constraintEnd_toStartOf="@+id/forwardArrow"
+        app:layout_constraintStart_toEndOf="@+id/dotSeparator"
+        app:layout_constraintTop_toTopOf="@+id/artistName"
+        tools:text="2:05" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
