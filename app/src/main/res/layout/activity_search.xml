@@ -104,7 +104,8 @@
             android:fontFamily="@font/ys_display_medium"
             android:textSize="14sp"
             app:backgroundTint="@color/primary_text_color"
-            android:textColor="@color/screen_background_color" />
+            android:textColor="@color/screen_background_color"
+            android:textAllCaps="false" />
 
 
 

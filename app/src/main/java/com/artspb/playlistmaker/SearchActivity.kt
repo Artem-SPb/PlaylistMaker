@@ -140,11 +140,12 @@ class SearchActivity : AppCompatActivity() {
 
         itunesService.search(query).enqueue(object : Callback<TrackResponse> {
             override fun onResponse(call: Call<TrackResponse>, response: Response<TrackResponse>) {
-                if (response.code() == 200) {
+                if (response.isSuccessful) {
                     trackList.clear()
-                    if (response.body()?.results?.isNotEmpty() == true) {
+                    val results = response.body()?.results
+                    if (!results.isNullOrEmpty()) {
                         // Успех: треки найдены
-                        trackList.addAll(response.body()?.results!!)
+                        trackList.addAll(results)
                         trackAdapter.notifyDataSetChanged()
                         showPlaceholder(PlaceholderState.SUCCESS)
                     } else {
