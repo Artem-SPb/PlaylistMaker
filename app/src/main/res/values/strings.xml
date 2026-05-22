@@ -19,4 +19,7 @@
     <string name="practicum_offer_link">https://yandex.ru/legal/practicum_offer/</string>
 
     <string name="track_description_separator">&#8226;</string>
+    <string name="refresh_button_text">Обновить</string>
+    <string name="nothing_found">Ничего не нашлось</string>
+    <string name="network_error">Проблемы со связью\n\nЗагрузка не удалась. Проверьте подключение к интернету</string>
 </resources>
