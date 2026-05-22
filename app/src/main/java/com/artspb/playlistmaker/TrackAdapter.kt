@@ -1,26 +1,30 @@
 package com.artspb.playlistmaker
 
+import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 
-// Я создаю адаптер для RecyclerView. В конструктор передаю ArrayList с нашими Mock-данными.
+// Добавили в конструктор clickListener - лямбду, которая принимает Track и ничего не возвращает (Unit)
 class TrackAdapter(
-    private val tracks: ArrayList<Track>
+    private val clickListener: (Track) -> Unit
 ) : RecyclerView.Adapter<TrackViewHolder>() {
 
-    // Создаю новый ViewHolder. Родительский ViewGroup передается прямо в конструктор TrackViewHolder,
-    // где и происходит создание View.
+    var tracks = ArrayList<Track>()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder {
         return TrackViewHolder(parent)
     }
 
-    // Связываю данные конкретного трека с ViewHolder'ом по позиции в списке
-    override fun onBindViewHolder(holder: TrackViewHolder, position: Int) {
-        holder.bind(tracks[position])
-    }
+    override fun getItemCount(): Int = tracks.size
 
-    // Возвращаю общее количество треков в списке
-    override fun getItemCount(): Int {
-        return tracks.size
+    override fun onBindViewHolder(holder: TrackViewHolder, position: Int) {
+        // Отрисовываем трек
+        holder.bind(tracks[position])
+
+        // Вешаем слушатель клика на весь элемент списка (itemView)
+        holder.itemView.setOnClickListener {
+            // При клике вызываем лямбду и передаем в нее трек, по которому кликнули
+            clickListener.invoke(tracks[position])
+        }
     }
 }
