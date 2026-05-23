@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="@string/settings"
-        app:titleTextAppearance="@style/SettingsItemTextStyle"
+        app:titleTextAppearance="@style/MainTitleTextStyle"
         app:navigationIcon="@drawable/ic_arrow_back_24"
         app:navigationIconTint="@color/primary_text_color" />
 
@@ -34,7 +34,8 @@
         android:paddingVertical="20dp"
         android:text="@string/share_app"
         android:textAppearance="@style/SettingsItemTextStyle"
-        app:drawableEndCompat="@drawable/ic_share_24" />
+        app:drawableEndCompat="@drawable/ic_share_24"
+        app:drawableTint="@color/settings_icon_tint" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/btnSupport"
@@ -44,7 +45,8 @@
         android:paddingVertical="20dp"
         android:text="@string/support"
         android:textAppearance="@style/SettingsItemTextStyle"
-        app:drawableEndCompat="@drawable/ic_support_24" />
+        app:drawableEndCompat="@drawable/ic_support_24"
+        app:drawableTint="@color/settings_icon_tint" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/btnAgreement"
@@ -54,6 +56,7 @@
         android:paddingVertical="20dp"
         android:text="@string/user_agreement"
         android:textAppearance="@style/SettingsItemTextStyle"
-        app:drawableEndCompat="@drawable/ic_arrow_forward_24" />
+        app:drawableEndCompat="@drawable/ic_arrow_forward_24"
+        app:drawableTint="@color/settings_icon_tint" />
 
 </LinearLayout>

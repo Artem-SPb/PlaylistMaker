@@ -39,7 +39,7 @@ class SearchActivity : AppCompatActivity() {
 
     // --- НОВОЕ: Переменные для истории поиска ---
     private lateinit var searchHistory: SearchHistory
-    private lateinit var historyLayout: LinearLayout
+    private lateinit var historyLayout: View
     private lateinit var historyRecyclerView: RecyclerView
     private lateinit var clearHistoryButton: Button
 
