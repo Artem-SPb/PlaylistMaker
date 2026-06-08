@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -19,6 +20,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -27,47 +29,53 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class SearchActivity : AppCompatActivity() {
 
-    // 1. Инициализирую Retrofit и API сервис для поиска в iTunes
+    // Инициализирую Retrofit и API
     private val itunesBaseUrl = "https://itunes.apple.com"
     private val retrofit = Retrofit.Builder()
         .baseUrl(itunesBaseUrl)
-        .addConverterFactory(GsonConverterFactory.create()) // Подключаю Gson для парсинга JSON
+        .addConverterFactory(GsonConverterFactory.create())
         .build()
     private val itunesService = retrofit.create(ItunesApi::class.java)
 
-    // Теперь это просто пустой список, который будет заполняться реальными данными из сети
-    private val trackList = ArrayList<Track>()
+    // --- НОВОЕ: Переменные для истории поиска ---
+    private lateinit var searchHistory: SearchHistory
+    private lateinit var historyLayout: View
+    private lateinit var historyRecyclerView: RecyclerView
+    private lateinit var clearHistoryButton: Button
+
+    // Теперь у нас ДВА адаптера: один для результатов, другой для истории
     private lateinit var trackAdapter: TrackAdapter
+    private lateinit var historyAdapter: TrackAdapter
 
     private var searchText: String = SEARCH_DEF
     private lateinit var inputEditText: EditText
     private lateinit var trackRecyclerView: RecyclerView
 
-    // UI-элементы для заглушек (плейсхолдеров)
+    // UI-элементы для заглушек
     private lateinit var placeholderContainer: LinearLayout
     private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
     private lateinit var refreshButton: Button
 
-    // Переменная для сохранения последнего запроса. Нужна для работы кнопки "Обновить" при ошибке сети.
     private var lastSearchQuery = ""
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Включаю EdgeToEdge, чтобы приложение рисовалось под статус-баром
         enableEdgeToEdge()
         setContentView(R.layout.activity_search)
 
-        // Настраиваю отступы для корневого элемента, чтобы контент не перекрывался системными иконками
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
             val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             view.updatePadding(top = statusBar.top)
             insets
         }
 
-        // Инициализация всех View элементов
+        // Инициализация SharedPreferences и менеджера истории (использую константу из App.kt)
+        val sharedPrefs = getSharedPreferences(PLAYLIST_MAKER_PREFERENCES, MODE_PRIVATE)
+        searchHistory = SearchHistory(sharedPrefs, Gson())
+
+        // Инициализация View
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)
         val clearIcon = findViewById<ImageView>(R.id.clearIcon)
@@ -78,13 +86,45 @@ class SearchActivity : AppCompatActivity() {
         placeholderMessage = findViewById(R.id.placeholderMessage)
         refreshButton = findViewById(R.id.refreshButton)
 
-        // Настройка RecyclerView и адаптера
-        trackAdapter = TrackAdapter(trackList)
+        historyLayout = findViewById(R.id.historyLayout)
+        historyRecyclerView = findViewById(R.id.historyRecyclerView)
+        clearHistoryButton = findViewById(R.id.clearHistoryButton)
+
+        toolbar.setNavigationOnClickListener { finish() }
+
+        // --- НАСТРОЙКА АДАПТЕРОВ (Исправление ошибок) ---
+
+        // 1. Адаптер для результатов поиска
+        trackAdapter = TrackAdapter { track ->
+            // По клику на трек добавляем его в историю
+            searchHistory.addTrack(track)
+            // И сразу обновляем адаптер истории, чтобы данные были свежими
+            historyAdapter.tracks = searchHistory.getHistory()
+            historyAdapter.notifyDataSetChanged()
+        }
         trackRecyclerView.adapter = trackAdapter
 
-        // Кнопка "Назад" в тулбаре
-        toolbar.setNavigationOnClickListener {
-            finish()
+        // 2. Адаптер для истории поиска
+        historyAdapter = TrackAdapter { track ->
+            // При клике на трек в истории он должен подниматься наверх
+            searchHistory.addTrack(track)
+            historyAdapter.tracks = searchHistory.getHistory()
+            historyAdapter.notifyDataSetChanged()
+        }
+        historyRecyclerView.adapter = historyAdapter
+        // При старте экрана сразу подтягиваем историю из памяти
+        historyAdapter.tracks = searchHistory.getHistory()
+
+        // --- ЛОГИКА ФОКУСА (Показываем историю, если поле в фокусе и пустое) ---
+        inputEditText.setOnFocusChangeListener { _, hasFocus ->
+            val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistory.getHistory().isNotEmpty()
+            historyLayout.isVisible = isHistoryVisible
+
+            // Если показываем историю, скрываем результаты
+            if (isHistoryVisible) {
+                trackRecyclerView.isVisible = false
+                placeholderContainer.isVisible = false
+            }
         }
 
         // Очистка поля ввода по нажатию на крестик
@@ -93,10 +133,16 @@ class SearchActivity : AppCompatActivity() {
             val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
 
-            // По ТЗ: при нажатии на крестик мы также должны очистить список треков и скрыть плейсхолдеры
-            trackList.clear()
+            // Очищаем результаты поиска
+            trackAdapter.tracks.clear()
             trackAdapter.notifyDataSetChanged()
-            showPlaceholder(PlaceholderState.SUCCESS) // Успешное (пустое) состояние без заглушек
+            showPlaceholder(PlaceholderState.SUCCESS) // Прячем заглушки
+
+            // Если история не пуста, после очистки поля она должна появиться (т.к. фокус остается на EditText)
+            if (searchHistory.getHistory().isNotEmpty()) {
+                historyLayout.isVisible = true
+                trackRecyclerView.isVisible = false
+            }
         }
 
         // Отслеживаем ввод текста
@@ -106,68 +152,85 @@ class SearchActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 searchText = s?.toString() ?: ""
                 clearIcon.isVisible = !s.isNullOrEmpty()
+
+                // Прячем или показываем историю на лету при изменении текста
+                val isHistoryVisible = inputEditText.hasFocus() && s?.isEmpty() == true && searchHistory.getHistory().isNotEmpty()
+                historyLayout.isVisible = isHistoryVisible
+
+                if (isHistoryVisible) {
+                    // Если история видима, точно скрываем результаты поиска и плейсхолдеры
+                    trackRecyclerView.isVisible = false
+                    placeholderContainer.isVisible = false
+                } else if (s?.isEmpty() == true) {
+                    // Если текст стерли, но истории нет, просто очищаем список результатов
+                    trackAdapter.tracks.clear()
+                    trackAdapter.notifyDataSetChanged()
+                    showPlaceholder(PlaceholderState.SUCCESS)
+                }
             }
 
             override fun afterTextChanged(s: Editable?) {}
         }
         inputEditText.addTextChangedListener(simpleTextWatcher)
 
-        // --- НОВОЕ: Обработка кнопки "Done" (Enter) на клавиатуре ---
+        // Обработка кнопки "Done" (Enter)
         inputEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 if (inputEditText.text.isNotEmpty()) {
                     searchTracks(inputEditText.text.toString())
                 }
                 true
-            } else {
-                false
-            }
+            } else false
         }
 
-        // --- НОВОЕ: Обработка кнопки "Обновить" при ошибке сети ---
+        // Обработка кнопки "Обновить"
         refreshButton.setOnClickListener {
             searchTracks(lastSearchQuery)
         }
+
+        // --- НОВОЕ: Обработка кнопки "Очистить историю" ---
+        clearHistoryButton.setOnClickListener {
+            searchHistory.clearHistory()
+            historyAdapter.tracks.clear()
+            historyAdapter.notifyDataSetChanged()
+            historyLayout.isVisible = false // Скрываем блок, так как история пуста
+        }
     }
 
-    // Метод для выполнения сетевого запроса к iTunes
     private fun searchTracks(query: String) {
-        lastSearchQuery = query // Сохраняем запрос на случай, если придется его повторить
+        lastSearchQuery = query
 
-        // При запуске поиска прячем клавиатуру (улучшаем UX)
+        // При начале поиска обязательно скрываем историю
+        historyLayout.isVisible = false
+
         val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
 
         itunesService.search(query).enqueue(object : Callback<TrackResponse> {
             override fun onResponse(call: Call<TrackResponse>, response: Response<TrackResponse>) {
                 if (response.isSuccessful) {
-                    trackList.clear()
+                    trackAdapter.tracks.clear()
                     val results = response.body()?.results
                     if (!results.isNullOrEmpty()) {
-                        // Успех: треки найдены
-                        trackList.addAll(results)
+                        // Кладу данные напрямую в список адаптера
+                        trackAdapter.tracks.addAll(results)
                         trackAdapter.notifyDataSetChanged()
                         showPlaceholder(PlaceholderState.SUCCESS)
                     } else {
-                        // Успех: сервер ответил, но ничего не найдено по этому запросу
                         trackAdapter.notifyDataSetChanged()
                         showPlaceholder(PlaceholderState.NOT_FOUND)
                     }
                 } else {
-                    // Сервер вернул ошибку (код отличный от 200)
                     showPlaceholder(PlaceholderState.ERROR)
                 }
             }
 
             override fun onFailure(call: Call<TrackResponse>, t: Throwable) {
-                // Ошибка сети (интернет отключен, таймаут)
                 showPlaceholder(PlaceholderState.ERROR)
             }
         })
     }
 
-    // Централизованное управление видимостью элементов экрана (Best Practice)
-    // Я использую Enum, чтобы избежать путаницы с множеством if/else для visibility
     private fun showPlaceholder(state: PlaceholderState) {
         when (state) {
             PlaceholderState.SUCCESS -> {
@@ -177,36 +240,31 @@ class SearchActivity : AppCompatActivity() {
             PlaceholderState.NOT_FOUND -> {
                 trackRecyclerView.isVisible = false
                 placeholderContainer.isVisible = true
-                refreshButton.isVisible = false // Кнопка "Обновить" здесь не нужна
-
+                refreshButton.isVisible = false
                 placeholderImage.setImageResource(R.drawable.ic_nothing_found)
                 placeholderMessage.text = getString(R.string.nothing_found)
             }
             PlaceholderState.ERROR -> {
                 trackRecyclerView.isVisible = false
                 placeholderContainer.isVisible = true
-                refreshButton.isVisible = true // Показываем кнопку "Обновить"
-
+                refreshButton.isVisible = true
                 placeholderImage.setImageResource(R.drawable.ic_network_error)
                 placeholderMessage.text = getString(R.string.network_error)
             }
         }
     }
 
-    // Сохраняю текст при повороте экрана
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(SEARCH_TEXT, searchText)
     }
 
-    // Восстанавливаю текст после поворота экрана
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         searchText = savedInstanceState.getString(SEARCH_TEXT, SEARCH_DEF)
         inputEditText.setText(searchText)
     }
 
-    // Enum-класс для возможных состояний экрана
     enum class PlaceholderState {
         SUCCESS, NOT_FOUND, ERROR
     }

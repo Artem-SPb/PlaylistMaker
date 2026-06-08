@@ -9,6 +9,9 @@
     <string name="share_app">Поделиться приложением</string>
     <string name="support">Написать в поддержку</string>
     <string name="user_agreement">Пользовательское соглашение</string>
+
+    <string name="you_searched">Вы искали</string>
+    <string name="clear_history">Очистить историю</string>
     <!-- Ссылки и тексты для экрана настроек -->
     <string name="course_link">https://practicum.yandex.ru/profile/android-developer-plus/</string>
 
