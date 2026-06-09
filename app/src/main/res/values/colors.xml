@@ -29,4 +29,6 @@
     <color name="search_hint_color">@color/yp_text_gray</color>
 
     <color name="secondary_text_color">@color/yp_text_gray</color>
+
+    <color name="player_button_bg">#1A1A1B22</color>
 </resources>

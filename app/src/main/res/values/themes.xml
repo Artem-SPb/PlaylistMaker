@@ -54,4 +54,25 @@
         <item name="android:textStyle">bold</item>
         <item name="android:fontFamily">@font/ys_display_medium</item>
     </style>
+
+    <!-- Стили для audio_player -->
+    <style name="TrackDetailsLabelStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/player_details_margin_top</item>
+        <item name="android:textSize">@dimen/player_details_text_size</item>
+        <item name="android:fontFamily">@font/ys_display_regular</item>
+        <item name="android:textColor">@color/secondary_text_color</item>
+    </style>
+
+    <style name="TrackDetailsValueStyle">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">@dimen/player_details_text_size</item>
+        <item name="android:fontFamily">@font/ys_display_regular</item>
+        <item name="android:textColor">@color/primary_text_color</item>
+        <item name="android:gravity">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
 </resources>
