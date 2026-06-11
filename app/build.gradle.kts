@@ -1,13 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // Добавляем плагин для автоматической генерации Parcelable
+    id("kotlin-parcelize")
 }
 
 android {
     namespace = "com.artspb.playlistmaker"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.artspb.playlistmaker"

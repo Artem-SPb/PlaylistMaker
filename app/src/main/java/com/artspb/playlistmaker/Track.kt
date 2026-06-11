@@ -1,7 +1,10 @@
 package com.artspb.playlistmaker
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Track(
     @SerializedName("trackId") val trackId: Long, // ID для проверки уникальности в истории
     @SerializedName("trackName") val trackName: String,
@@ -22,7 +25,7 @@ data class Track(
 
     // Страна исполнителя
     @SerializedName("country") val country: String
-) {
+) : Parcelable {
     /**
      * Функция для получения ссылки на обложку в высоком качестве (512x512).
      * Берем стандартную ссылку artworkUrl100 и заменяем её окончание с помощью

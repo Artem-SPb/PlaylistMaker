@@ -190,7 +190,7 @@ class SearchActivity : AppCompatActivity() {
     }
 
     /**
-     * Единый метод обработки клика по треку (Спринт 13).
+     * Единый метод обработки клика по треку.
      * Выносим сюда логику, чтобы не дублировать код для trackAdapter и historyAdapter.
      */
     private fun onTrackClick(track: Track) {
@@ -203,9 +203,10 @@ class SearchActivity : AppCompatActivity() {
 
         // 3. Создаем Intent для перехода на экран плеера (MediaActivity)
         val intent = Intent(this, MediaActivity::class.java).apply {
-            // Превращаем объект Track в JSON-строку и кладем в Intent
-            val trackJson = Gson().toJson(track)
-            putExtra(MediaActivity.EXTRA_TRACK, trackJson)
+            // ПЕРЕДАЕМ ОБЪЕКТ НАПРЯМУЮ:
+            // Благодаря интерфейсу Parcelable и плагину kotlin-parcelize,
+            // мы можем передать объект track напрямую, без сериализации в JSON.
+            putExtra(MediaActivity.EXTRA_TRACK, track)
         }
 
         // Запускаем экран плеера

@@ -1,5 +1,6 @@
 package com.artspb.playlistmaker
 
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -9,11 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.Group
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.artspb.playlistmaker.R
-import com.artspb.playlistmaker.Track
-import com.google.gson.Gson
 import java.text.SimpleDateFormat
 import java.util.Locale
+
 class MediaActivity : AppCompatActivity() {
 
     // Кэшируем форматтер, чтобы не создавать объект каждый раз.
@@ -24,13 +23,21 @@ class MediaActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_audio_player)
 
-        // 1. Извлекаем данные трека из Intent (ожидаем, что передали JSON-строку через Gson)
-        val trackJson = intent.getStringExtra(EXTRA_TRACK)
-        if (trackJson.isNullOrEmpty()) {
-            finish() // Безопасный выход, если данных нет
+        // 1. Извлекаем данные трека из Intent через интерфейс Parcelable (по рекомендации ревьюера).
+        // Начиная с Android 13 (API 33), старый метод getParcelableExtra<T>(String) стал deprecated.
+        // Для соблюдения Best Practices и обеспечения обратной совместимости добавляем проверку версии SDK.
+        val track = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(EXTRA_TRACK, Track::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra<Track>(EXTRA_TRACK)
+        }
+
+        // Безопасный выход, если данные не пришли (защита от крашей)
+        if (track == null) {
+            finish()
             return
         }
-        val track = Gson().fromJson(trackJson, Track::class.java)
 
         // 2. Инициализируем View компоненты экрана плеера
         val backButton = findViewById<ImageButton>(R.id.backButton)
@@ -84,6 +91,7 @@ class MediaActivity : AppCompatActivity() {
     }
 
     companion object {
+        // Константа ключа интента для передачи данных трека
         const val EXTRA_TRACK = "extra_track"
     }
 }
