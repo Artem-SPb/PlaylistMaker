@@ -17,4 +17,6 @@
     <color name="search_field_background">@color/yp_white</color>
     <color name="search_hint_color">@color/yp_text_gray</color>
     <color name="secondary_text_color">@color/yp_text_gray</color>
+
+    <color name="player_button_bg">#33FFFFFF</color>
 </resources>

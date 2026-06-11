@@ -25,4 +25,14 @@
     <string name="refresh_button_text">Обновить</string>
     <string name="nothing_found">Ничего не нашлось</string>
     <string name="network_error">Проблемы со связью\n\nЗагрузка не удалась. Проверьте подключение к интернету</string>
+
+    <string name="duration">Длительность</string>
+    <string name="album">Альбом</string>
+    <string name="year">Год</string>
+    <string name="genre">Жанр</string>
+    <string name="country">Страна</string>
+
+    <string name="player_add_button_description">Добавить в плейлист</string>
+    <string name="player_play_button_description">Воспроизвести</string>
+    <string name="player_favorite_button_description">Добавить в избранное</string>
 </resources>

@@ -2,6 +2,7 @@ package com.artspb.playlistmaker
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -37,7 +38,7 @@ class SearchActivity : AppCompatActivity() {
         .build()
     private val itunesService = retrofit.create(ItunesApi::class.java)
 
-    // --- НОВОЕ: Переменные для истории поиска ---
+    // Переменные для истории поиска
     private lateinit var searchHistory: SearchHistory
     private lateinit var historyLayout: View
     private lateinit var historyRecyclerView: RecyclerView
@@ -71,7 +72,7 @@ class SearchActivity : AppCompatActivity() {
             insets
         }
 
-        // Инициализация SharedPreferences и менеджера истории (использую константу из App.kt)
+        // Инициализация SharedPreferences и менеджера истории
         val sharedPrefs = getSharedPreferences(PLAYLIST_MAKER_PREFERENCES, MODE_PRIVATE)
         searchHistory = SearchHistory(sharedPrefs, Gson())
 
@@ -92,30 +93,23 @@ class SearchActivity : AppCompatActivity() {
 
         toolbar.setNavigationOnClickListener { finish() }
 
-        // --- НАСТРОЙКА АДАПТЕРОВ (Исправление ошибок) ---
+        // --- НАСТРОЙКА АДАПТЕРОВ ---
 
         // 1. Адаптер для результатов поиска
-        trackAdapter = TrackAdapter { track ->
-            // По клику на трек добавляем его в историю
-            searchHistory.addTrack(track)
-            // И сразу обновляем адаптер истории, чтобы данные были свежими
-            historyAdapter.tracks = searchHistory.getHistory()
-            historyAdapter.notifyDataSetChanged()
+        trackAdapter = TrackAdapter { track: Track ->
+            onTrackClick(track)
         }
         trackRecyclerView.adapter = trackAdapter
 
         // 2. Адаптер для истории поиска
-        historyAdapter = TrackAdapter { track ->
-            // При клике на трек в истории он должен подниматься наверх
-            searchHistory.addTrack(track)
-            historyAdapter.tracks = searchHistory.getHistory()
-            historyAdapter.notifyDataSetChanged()
+        historyAdapter = TrackAdapter { track: Track ->
+            onTrackClick(track)
         }
         historyRecyclerView.adapter = historyAdapter
         // При старте экрана сразу подтягиваем историю из памяти
         historyAdapter.tracks = searchHistory.getHistory()
 
-        // --- ЛОГИКА ФОКУСА (Показываем историю, если поле в фокусе и пустое) ---
+        // --- ЛОГИКА ФОКУСА ---
         inputEditText.setOnFocusChangeListener { _, hasFocus ->
             val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistory.getHistory().isNotEmpty()
             historyLayout.isVisible = isHistoryVisible
@@ -136,9 +130,9 @@ class SearchActivity : AppCompatActivity() {
             // Очищаем результаты поиска
             trackAdapter.tracks.clear()
             trackAdapter.notifyDataSetChanged()
-            showPlaceholder(PlaceholderState.SUCCESS) // Прячем заглушки
+            showPlaceholder(PlaceholderState.SUCCESS)
 
-            // Если история не пуста, после очистки поля она должна появиться (т.к. фокус остается на EditText)
+            // Если история не пуста, после очистки поля она должна появиться
             if (searchHistory.getHistory().isNotEmpty()) {
                 historyLayout.isVisible = true
                 trackRecyclerView.isVisible = false
@@ -158,11 +152,9 @@ class SearchActivity : AppCompatActivity() {
                 historyLayout.isVisible = isHistoryVisible
 
                 if (isHistoryVisible) {
-                    // Если история видима, точно скрываем результаты поиска и плейсхолдеры
                     trackRecyclerView.isVisible = false
                     placeholderContainer.isVisible = false
                 } else if (s?.isEmpty() == true) {
-                    // Если текст стерли, но истории нет, просто очищаем список результатов
                     trackAdapter.tracks.clear()
                     trackAdapter.notifyDataSetChanged()
                     showPlaceholder(PlaceholderState.SUCCESS)
@@ -188,13 +180,37 @@ class SearchActivity : AppCompatActivity() {
             searchTracks(lastSearchQuery)
         }
 
-        // --- НОВОЕ: Обработка кнопки "Очистить историю" ---
+        // Обработка кнопки "Очистить историю"
         clearHistoryButton.setOnClickListener {
             searchHistory.clearHistory()
             historyAdapter.tracks.clear()
             historyAdapter.notifyDataSetChanged()
-            historyLayout.isVisible = false // Скрываем блок, так как история пуста
+            historyLayout.isVisible = false
         }
+    }
+
+    /**
+     * Единый метод обработки клика по треку.
+     * Выносим сюда логику, чтобы не дублировать код для trackAdapter и historyAdapter.
+     */
+    private fun onTrackClick(track: Track) {
+        // 1. Добавляем трек в историю (он поднимется наверх)
+        searchHistory.addTrack(track)
+
+        // 2. Обновляем адаптер истории
+        historyAdapter.tracks = searchHistory.getHistory()
+        historyAdapter.notifyDataSetChanged()
+
+        // 3. Создаем Intent для перехода на экран плеера (MediaActivity)
+        val intent = Intent(this, MediaActivity::class.java).apply {
+            // ПЕРЕДАЕМ ОБЪЕКТ НАПРЯМУЮ:
+            // Благодаря интерфейсу Parcelable и плагину kotlin-parcelize,
+            // мы можем передать объект track напрямую, без сериализации в JSON.
+            putExtra(MediaActivity.EXTRA_TRACK, track)
+        }
+
+        // Запускаем экран плеера
+        startActivity(intent)
     }
 
     private fun searchTracks(query: String) {
@@ -212,7 +228,6 @@ class SearchActivity : AppCompatActivity() {
                     trackAdapter.tracks.clear()
                     val results = response.body()?.results
                     if (!results.isNullOrEmpty()) {
-                        // Кладу данные напрямую в список адаптера
                         trackAdapter.tracks.addAll(results)
                         trackAdapter.notifyDataSetChanged()
                         showPlaceholder(PlaceholderState.SUCCESS)
@@ -274,4 +289,3 @@ class SearchActivity : AppCompatActivity() {
         const val SEARCH_DEF = ""
     }
 }
-
