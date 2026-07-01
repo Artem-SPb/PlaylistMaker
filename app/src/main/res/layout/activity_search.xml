@@ -120,9 +120,9 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:gravity="center"
+        android:gravity="top|center_horizontal"
         android:visibility="gone"
-        android:layout_marginTop="@dimen/padding_standard">
+        android:layout_marginTop="102dp">
 
         <ImageView
             android:id="@+id/placeholderImage"
@@ -157,5 +157,21 @@
             android:textAllCaps="false" />
 
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/progressBarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="140dp"
+            android:indeterminateTint="@color/yp_blue" />
+    </FrameLayout>
 
 </LinearLayout>

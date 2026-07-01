@@ -52,13 +52,21 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var inputEditText: EditText
     private lateinit var trackRecyclerView: RecyclerView
 
-    // UI-элементы для заглушек
+    // UI-элементы для заглушек и загрузки
     private lateinit var placeholderContainer: LinearLayout
     private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
     private lateinit var refreshButton: Button
+    private lateinit var progressBarContainer: View
 
     private var lastSearchQuery = ""
+
+    // Handler и Runnable для автоматического поиска с debounce (Спринт 14)
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val searchRunnable = Runnable { searchTracks(inputEditText.text.toString()) }
+
+    // Флаг для ограничения частоты кликов (защита от двойного открытия плеера)
+    private var isClickAllowed = true
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,6 +94,7 @@ class SearchActivity : AppCompatActivity() {
         placeholderImage = findViewById(R.id.placeholderImage)
         placeholderMessage = findViewById(R.id.placeholderMessage)
         refreshButton = findViewById(R.id.refreshButton)
+        progressBarContainer = findViewById(R.id.progressBarContainer)
 
         historyLayout = findViewById(R.id.historyLayout)
         historyRecyclerView = findViewById(R.id.historyRecyclerView)
@@ -114,10 +123,11 @@ class SearchActivity : AppCompatActivity() {
             val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistory.getHistory().isNotEmpty()
             historyLayout.isVisible = isHistoryVisible
 
-            // Если показываем историю, скрываем результаты
+            // Если показываем историю, скрываем результаты и загрузку
             if (isHistoryVisible) {
                 trackRecyclerView.isVisible = false
                 placeholderContainer.isVisible = false
+                progressBarContainer.isVisible = false
             }
         }
 
@@ -126,6 +136,9 @@ class SearchActivity : AppCompatActivity() {
             inputEditText.setText("")
             val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
+
+            // Отменяем отложенный запрос поиска, если он был запланирован
+            handler.removeCallbacks(searchRunnable)
 
             // Очищаем результаты поиска
             trackAdapter.tracks.clear()
@@ -154,10 +167,16 @@ class SearchActivity : AppCompatActivity() {
                 if (isHistoryVisible) {
                     trackRecyclerView.isVisible = false
                     placeholderContainer.isVisible = false
+                    progressBarContainer.isVisible = false
+                    handler.removeCallbacks(searchRunnable)
                 } else if (s?.isEmpty() == true) {
                     trackAdapter.tracks.clear()
                     trackAdapter.notifyDataSetChanged()
                     showPlaceholder(PlaceholderState.SUCCESS)
+                    handler.removeCallbacks(searchRunnable)
+                } else {
+                    // Запускаем debounce поиска при каждом изменении текста
+                    searchDebounce()
                 }
             }
 
@@ -194,6 +213,9 @@ class SearchActivity : AppCompatActivity() {
      * Выносим сюда логику, чтобы не дублировать код для trackAdapter и historyAdapter.
      */
     private fun onTrackClick(track: Track) {
+        // Защита от быстрого двойного нажатия (Debounce клика из Спринта 14)
+        if (!clickDebounce()) return
+
         // 1. Добавляем трек в историю (он поднимется наверх)
         searchHistory.addTrack(track)
 
@@ -214,7 +236,12 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun searchTracks(query: String) {
+        if (query.isEmpty()) return
+
         lastSearchQuery = query
+
+        // Показываем индикатор загрузки перед выполнением сетевого запроса
+        showPlaceholder(PlaceholderState.LOADING)
 
         // При начале поиска обязательно скрываем историю
         historyLayout.isVisible = false
@@ -246,15 +273,43 @@ class SearchActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * Запуск отложенного поиска с задержкой 2 секунды (Debounce)
+     */
+    private fun searchDebounce() {
+        handler.removeCallbacks(searchRunnable)
+        handler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_DELAY)
+    }
+
+    /**
+     * Ограничение частоты нажатий на элементы списка (Debounce клика)
+     */
+    private fun clickDebounce(): Boolean {
+        val current = isClickAllowed
+        if (isClickAllowed) {
+            isClickAllowed = false
+            handler.postDelayed({ isClickAllowed = true }, CLICK_DEBOUNCE_DELAY)
+        }
+        return current
+    }
+
     private fun showPlaceholder(state: PlaceholderState) {
         when (state) {
+            PlaceholderState.LOADING -> {
+                trackRecyclerView.isVisible = false
+                historyLayout.isVisible = false
+                placeholderContainer.isVisible = false
+                progressBarContainer.isVisible = true
+            }
             PlaceholderState.SUCCESS -> {
                 trackRecyclerView.isVisible = true
                 placeholderContainer.isVisible = false
+                progressBarContainer.isVisible = false
             }
             PlaceholderState.NOT_FOUND -> {
                 trackRecyclerView.isVisible = false
                 placeholderContainer.isVisible = true
+                progressBarContainer.isVisible = false
                 refreshButton.isVisible = false
                 placeholderImage.setImageResource(R.drawable.ic_nothing_found)
                 placeholderMessage.text = getString(R.string.nothing_found)
@@ -262,6 +317,7 @@ class SearchActivity : AppCompatActivity() {
             PlaceholderState.ERROR -> {
                 trackRecyclerView.isVisible = false
                 placeholderContainer.isVisible = true
+                progressBarContainer.isVisible = false
                 refreshButton.isVisible = true
                 placeholderImage.setImageResource(R.drawable.ic_network_error)
                 placeholderMessage.text = getString(R.string.network_error)
@@ -280,12 +336,20 @@ class SearchActivity : AppCompatActivity() {
         inputEditText.setText(searchText)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        // Обязательно удаляем коллбеки при закрытии Activity для предотвращения утечек памяти
+        handler.removeCallbacksAndMessages(null)
+    }
+
     enum class PlaceholderState {
-        SUCCESS, NOT_FOUND, ERROR
+        SUCCESS, NOT_FOUND, ERROR, LOADING
     }
 
     companion object {
         const val SEARCH_TEXT = "SEARCH_TEXT"
         const val SEARCH_DEF = ""
+        private const val SEARCH_DEBOUNCE_DELAY = 2000L
+        private const val CLICK_DEBOUNCE_DELAY = 1000L
     }
 }
