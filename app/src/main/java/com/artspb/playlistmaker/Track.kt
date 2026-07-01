@@ -24,7 +24,11 @@ data class Track(
     @SerializedName("primaryGenreName") val primaryGenreName: String,
 
     // Страна исполнителя
-    @SerializedName("country") val country: String
+    @SerializedName("country") val country: String,
+
+    // Ссылка на 30-секундный отрывок трека для предварительного прослушивания (Спринт 14).
+    // Делаем nullable (String?), так как у некоторых треков отрывок может отсутствовать.
+    @SerializedName("previewUrl") val previewUrl: String?
 ) : Parcelable {
     /**
      * Функция для получения ссылки на обложку в высоком качестве (512x512).
