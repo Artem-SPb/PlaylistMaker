@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -16,12 +18,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.appcompat.widget.Toolbar
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -40,16 +39,17 @@ class SearchActivity : AppCompatActivity() {
 
     // Переменные для истории поиска
     private lateinit var searchHistory: SearchHistory
-    private lateinit var historyLayout: View
-    private lateinit var historyRecyclerView: RecyclerView
+    private lateinit var historyHeader: View
     private lateinit var clearHistoryButton: Button
 
-    // Теперь у нас ДВА адаптера: один для результатов, другой для истории
+    private lateinit var inputEditText: EditText
+    private lateinit var clearIcon: ImageView
+    private lateinit var toolbar: Toolbar
+    private var searchText: String = SEARCH_DEF
+
+    // Адаптеры для результатов и истории (теперь используют один и тот же RecyclerView по рекомендации ревьюера)
     private lateinit var trackAdapter: TrackAdapter
     private lateinit var historyAdapter: TrackAdapter
-
-    private var searchText: String = SEARCH_DEF
-    private lateinit var inputEditText: EditText
     private lateinit var trackRecyclerView: RecyclerView
 
     // UI-элементы для заглушек и загрузки
@@ -62,7 +62,7 @@ class SearchActivity : AppCompatActivity() {
     private var lastSearchQuery = ""
 
     // Handler и Runnable для автоматического поиска с debounce (Спринт 14)
-    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val handler = Handler(Looper.getMainLooper())
     private val searchRunnable = Runnable { searchTracks(inputEditText.text.toString()) }
 
     // Флаг для ограничения частоты кликов (защита от двойного открытия плеера)
@@ -74,30 +74,21 @@ class SearchActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_search)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
-            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            view.updatePadding(top = statusBar.top)
-            insets
-        }
+        // Инициализирую класс истории поиска
+        searchHistory = SearchHistory(getSharedPreferences(PLAYLIST_MAKER_PREFERENCES, Context.MODE_PRIVATE), com.google.gson.Gson())
 
-        // Инициализация SharedPreferences и менеджера истории
-        val sharedPrefs = getSharedPreferences(PLAYLIST_MAKER_PREFERENCES, MODE_PRIVATE)
-        searchHistory = SearchHistory(sharedPrefs, Gson())
-
-        // Инициализация View
-        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        // Инициализирую View компоненты
+        toolbar = findViewById(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)
-        val clearIcon = findViewById<ImageView>(R.id.clearIcon)
+        clearIcon = findViewById(R.id.clearIcon)
         trackRecyclerView = findViewById(R.id.trackRecyclerView)
-
         placeholderContainer = findViewById(R.id.placeholderContainer)
         placeholderImage = findViewById(R.id.placeholderImage)
         placeholderMessage = findViewById(R.id.placeholderMessage)
         refreshButton = findViewById(R.id.refreshButton)
         progressBarContainer = findViewById(R.id.progressBarContainer)
 
-        historyLayout = findViewById(R.id.historyLayout)
-        historyRecyclerView = findViewById(R.id.historyRecyclerView)
+        historyHeader = findViewById(R.id.historyHeader)
         clearHistoryButton = findViewById(R.id.clearHistoryButton)
 
         toolbar.setNavigationOnClickListener { finish() }
@@ -114,21 +105,13 @@ class SearchActivity : AppCompatActivity() {
         historyAdapter = TrackAdapter { track: Track ->
             onTrackClick(track)
         }
-        historyRecyclerView.adapter = historyAdapter
         // При старте экрана сразу подтягиваем историю из памяти
         historyAdapter.tracks = searchHistory.getHistory()
 
         // --- ЛОГИКА ФОКУСА ---
         inputEditText.setOnFocusChangeListener { _, hasFocus ->
             val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistory.getHistory().isNotEmpty()
-            historyLayout.isVisible = isHistoryVisible
-
-            // Если показываем историю, скрываем результаты и загрузку
-            if (isHistoryVisible) {
-                trackRecyclerView.isVisible = false
-                placeholderContainer.isVisible = false
-                progressBarContainer.isVisible = false
-            }
+            setHistoryMode(isHistoryVisible)
         }
 
         // Очистка поля ввода по нажатию на крестик
@@ -143,12 +126,12 @@ class SearchActivity : AppCompatActivity() {
             // Очищаем результаты поиска
             trackAdapter.tracks.clear()
             trackAdapter.notifyDataSetChanged()
-            showPlaceholder(PlaceholderState.SUCCESS)
 
             // Если история не пуста, после очистки поля она должна появиться
             if (searchHistory.getHistory().isNotEmpty()) {
-                historyLayout.isVisible = true
-                trackRecyclerView.isVisible = false
+                setHistoryMode(true)
+            } else {
+                showPlaceholder(PlaceholderState.SUCCESS)
             }
         }
 
@@ -162,19 +145,17 @@ class SearchActivity : AppCompatActivity() {
 
                 // Прячем или показываем историю на лету при изменении текста
                 val isHistoryVisible = inputEditText.hasFocus() && s?.isEmpty() == true && searchHistory.getHistory().isNotEmpty()
-                historyLayout.isVisible = isHistoryVisible
-
                 if (isHistoryVisible) {
-                    trackRecyclerView.isVisible = false
-                    placeholderContainer.isVisible = false
-                    progressBarContainer.isVisible = false
+                    setHistoryMode(true)
                     handler.removeCallbacks(searchRunnable)
                 } else if (s?.isEmpty() == true) {
+                    setHistoryMode(false)
                     trackAdapter.tracks.clear()
                     trackAdapter.notifyDataSetChanged()
                     showPlaceholder(PlaceholderState.SUCCESS)
                     handler.removeCallbacks(searchRunnable)
                 } else {
+                    setHistoryMode(false)
                     // Запускаем debounce поиска при каждом изменении текста
                     searchDebounce()
                 }
@@ -204,7 +185,28 @@ class SearchActivity : AppCompatActivity() {
             searchHistory.clearHistory()
             historyAdapter.tracks.clear()
             historyAdapter.notifyDataSetChanged()
-            historyLayout.isVisible = false
+            setHistoryMode(false)
+        }
+    }
+
+    /**
+     * Отображение или сокрытие режима истории поиска (по рекомендации ревьюера).
+     * Вместо второго RecyclerView и ScrollView мы используем один trackRecyclerView,
+     * динамически подменяя в нем адаптер и показывая/скрывая заголовок с кнопкой очистки.
+     */
+    private fun setHistoryMode(isHistoryVisible: Boolean) {
+        historyHeader.isVisible = isHistoryVisible
+        clearHistoryButton.isVisible = isHistoryVisible
+
+        if (isHistoryVisible) {
+            trackRecyclerView.adapter = historyAdapter
+            historyAdapter.tracks = searchHistory.getHistory()
+            historyAdapter.notifyDataSetChanged()
+            trackRecyclerView.isVisible = true
+            placeholderContainer.isVisible = false
+            progressBarContainer.isVisible = false
+        } else {
+            trackRecyclerView.adapter = trackAdapter
         }
     }
 
@@ -244,7 +246,7 @@ class SearchActivity : AppCompatActivity() {
         showPlaceholder(PlaceholderState.LOADING)
 
         // При начале поиска обязательно скрываем историю
-        historyLayout.isVisible = false
+        setHistoryMode(false)
 
         val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
@@ -297,17 +299,23 @@ class SearchActivity : AppCompatActivity() {
         when (state) {
             PlaceholderState.LOADING -> {
                 trackRecyclerView.isVisible = false
-                historyLayout.isVisible = false
+                historyHeader.isVisible = false
+                clearHistoryButton.isVisible = false
                 placeholderContainer.isVisible = false
                 progressBarContainer.isVisible = true
             }
             PlaceholderState.SUCCESS -> {
+                trackRecyclerView.adapter = trackAdapter
                 trackRecyclerView.isVisible = true
+                historyHeader.isVisible = false
+                clearHistoryButton.isVisible = false
                 placeholderContainer.isVisible = false
                 progressBarContainer.isVisible = false
             }
             PlaceholderState.NOT_FOUND -> {
                 trackRecyclerView.isVisible = false
+                historyHeader.isVisible = false
+                clearHistoryButton.isVisible = false
                 placeholderContainer.isVisible = true
                 progressBarContainer.isVisible = false
                 refreshButton.isVisible = false
@@ -316,6 +324,8 @@ class SearchActivity : AppCompatActivity() {
             }
             PlaceholderState.ERROR -> {
                 trackRecyclerView.isVisible = false
+                historyHeader.isVisible = false
+                clearHistoryButton.isVisible = false
                 placeholderContainer.isVisible = true
                 progressBarContainer.isVisible = false
                 refreshButton.isVisible = true

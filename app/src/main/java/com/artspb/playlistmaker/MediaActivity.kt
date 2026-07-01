@@ -1,6 +1,5 @@
 package com.artspb.playlistmaker
 
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -22,13 +21,15 @@ class MediaActivity : AppCompatActivity() {
     // Это хорошая практика для оптимизации памяти при работе с UI.
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
-    // Переменные для работы с MediaPlayer и обновления таймера (Спринт 14)
-    private var mediaPlayer = MediaPlayer()
-    private var playerState = STATE_DEFAULT
+    // Контроллер аудиоплеера, вынесенный за абстракцию (интерфейс) по рекомендации ревьюера (Спринт 14).
+    // Позволяет легко подменить реализацию (например, на ExoPlayer) и упрощает тестирование.
+    private val audioPlayer: AudioPlayerControl = AndroidAudioPlayerImpl()
+
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var playButton: ImageButton
     private lateinit var playbackTimeTextView: TextView
     private var url: String? = null
+
     // Переменные для компенсации сброса таймстемпа в NuPlayer на эмуляторе при стриминге
     private var lastCurrentPosition = 0
     private var positionOffset = 0
@@ -36,8 +37,8 @@ class MediaActivity : AppCompatActivity() {
     // Runnable для регулярного обновления таймера в формате mm:ss
     private val updateTimerRunnable = object : Runnable {
         override fun run() {
-            if (playerState == STATE_PLAYING) {
-                val currentPosition = mediaPlayer.currentPosition
+            if (audioPlayer.getPlayerState() == PlayerState.PLAYING) {
+                val currentPosition = audioPlayer.getCurrentPosition()
                 // Компенсируем скачок назад, если движок эмулятора (NuPlayer)
                 // сбросил метку времени при переключении сетевого буфера
                 if (lastCurrentPosition - currentPosition > 1000) {
@@ -78,42 +79,39 @@ class MediaActivity : AppCompatActivity() {
         val trackName = findViewById<TextView>(R.id.trackNameTextView)
         val artistName = findViewById<TextView>(R.id.artistNameTextView)
         val durationValue = findViewById<TextView>(R.id.durationValue)
+        val albumGroup = findViewById<Group>(R.id.albumGroup)
         val albumValue = findViewById<TextView>(R.id.albumValue)
         val yearValue = findViewById<TextView>(R.id.yearValue)
         val genreValue = findViewById<TextView>(R.id.genreValue)
         val countryValue = findViewById<TextView>(R.id.countryValue)
-        val albumGroup = findViewById<Group>(R.id.albumGroup)
 
-        // 3. Обработка кнопки "Назад"
-        // Вызываем finish(), чтобы закрыть текущую Activity и вернуться на предыдущий экран поиска
+        // 3. Настройка кнопки Назад
         backButton.setOnClickListener {
             finish()
         }
 
-        // 4. Заполнение UI элементов данными из нашей модели Track
+        // 4. Заполнение обязательных текстовых полей
         trackName.text = track.trackName
         artistName.text = track.artistName
         durationValue.text = dateFormat.format(track.trackTimeMillis)
         genreValue.text = track.primaryGenreName
         countryValue.text = track.country
 
-        // Логика отображения альбома: если данных нет, скрываем всю группу (Заголовок + Значение) через Group
-        if (track.collectionName.isNullOrEmpty()) {
-            albumGroup.visibility = View.GONE
-        } else {
-            albumGroup.visibility = View.VISIBLE
+        // 5. Логика отображения опциональных полей (Альбом и Год)
+        if (!track.collectionName.isNullOrEmpty()) {
             albumValue.text = track.collectionName
-        }
-
-        // Логика отображения года: берем первые 4 символа из строки формата "1999-10-12T07:00:00Z"
-        if (track.releaseDate.isNullOrEmpty()) {
-            yearValue.text = ""
+            albumGroup.visibility = View.VISIBLE
         } else {
-            yearValue.text = track.releaseDate.substring(0, 4)
+            albumGroup.visibility = View.GONE
         }
 
-        // 5. Загрузка обложки в высоком разрешении (512x512) через Glide
-        // Используем встроенную функцию getCoverArtwork() из модели Track для подмены URL
+        if (!track.releaseDate.isNullOrEmpty() && track.releaseDate.length >= 4) {
+            yearValue.text = track.releaseDate.substring(0, 4)
+        } else {
+            yearValue.text = ""
+        }
+
+        // Загрузка обложки в разрешении 512x512 через Glide
         val cornerRadius = resources.getDimensionPixelSize(R.dimen.player_cover_corner_radius)
         Glide.with(this)
             .load(track.getCoverArtwork())
@@ -135,7 +133,7 @@ class MediaActivity : AppCompatActivity() {
     }
 
     /**
-     * Подготовка MediaPlayer к воспроизведению
+     * Подготовка плеера к воспроизведению через абстрактный интерфейс AudioPlayerControl
      */
     private fun preparePlayer() {
         val previewUrl = url
@@ -143,57 +141,56 @@ class MediaActivity : AppCompatActivity() {
             playButton.isEnabled = false
             return
         }
-        try {
-            mediaPlayer.setDataSource(previewUrl)
-            mediaPlayer.prepareAsync()
-            mediaPlayer.setOnPreparedListener {
+        audioPlayer.preparePlayer(
+            url = previewUrl,
+            onPrepared = {
                 playButton.isEnabled = true
-                playerState = STATE_PREPARED
-            }
-            mediaPlayer.setOnCompletionListener {
-                playerState = STATE_PREPARED
+            },
+            onCompletion = {
                 playButton.setImageResource(R.drawable.ic_play_circle)
                 playButton.contentDescription = getString(R.string.player_play_button_description)
                 handler.removeCallbacks(updateTimerRunnable)
                 lastCurrentPosition = 0
                 positionOffset = 0
                 playbackTimeTextView.text = getString(R.string.player_default_time)
-                mediaPlayer.seekTo(0)
+                audioPlayer.seekTo(0)
+            },
+            onError = {
+                playButton.isEnabled = false
             }
-        } catch (e: Exception) {
-            playButton.isEnabled = false
-        }
+        )
     }
 
     /**
-     * Управление воспроизведением по клику на кнопку Play/Pause
+     * Управление воспроизведением по клику на кнопку Play/Pause с использованием enum PlayerState
      */
     private fun playbackControl() {
-        when (playerState) {
-            STATE_PLAYING -> {
+        when (audioPlayer.getPlayerState()) {
+            PlayerState.PLAYING -> {
                 pausePlayer()
             }
-            STATE_PREPARED, STATE_PAUSED -> {
+            PlayerState.PREPARED, PlayerState.PAUSED -> {
                 startPlayer()
+            }
+            PlayerState.DEFAULT -> {
+                // Плеер еще не подготовлен
             }
         }
     }
 
     private fun startPlayer() {
-        if (playerState == STATE_PREPARED) {
+        if (audioPlayer.getPlayerState() == PlayerState.PREPARED) {
             lastCurrentPosition = 0
             positionOffset = 0
         }
-        mediaPlayer.start()
-        playerState = STATE_PLAYING
+        audioPlayer.startPlayer()
         playButton.setImageResource(R.drawable.ic_pause_circle)
         playButton.contentDescription = getString(R.string.player_pause_button_description)
         handler.postDelayed(updateTimerRunnable, UPDATE_TIMER_DELAY)
     }
 
     private fun pausePlayer() {
-        mediaPlayer.pause()
-        playerState = STATE_PAUSED
+        audioPlayer.pausePlayer()
         playButton.setImageResource(R.drawable.ic_play_circle)
         playButton.contentDescription = getString(R.string.player_play_button_description)
         handler.removeCallbacks(updateTimerRunnable)
@@ -202,25 +199,21 @@ class MediaActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         // При переводе приложения в фоновый режим приостанавливаем воспроизведение
-        if (playerState == STATE_PLAYING) {
+        if (audioPlayer.getPlayerState() == PlayerState.PLAYING) {
             pausePlayer()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Обязательно освобождаем ресурсы MediaPlayer и удаляем коллбеки при закрытии экрана
+        // Обязательно освобождаем ресурсы плеера и удаляем коллбеки при закрытии экрана
         handler.removeCallbacks(updateTimerRunnable)
-        mediaPlayer.release()
+        audioPlayer.releasePlayer()
     }
 
     companion object {
         // Константа ключа интента для передачи данных трека
         const val EXTRA_TRACK = "extra_track"
-        private const val STATE_DEFAULT = 0
-        private const val STATE_PREPARED = 1
-        private const val STATE_PLAYING = 2
-        private const val STATE_PAUSED = 3
         private const val UPDATE_TIMER_DELAY = 300L
     }
 }
