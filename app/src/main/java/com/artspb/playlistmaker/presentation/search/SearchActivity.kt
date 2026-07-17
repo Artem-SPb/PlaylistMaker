@@ -19,7 +19,10 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.artspb.playlistmaker.Creator
 import com.artspb.playlistmaker.R
@@ -65,6 +68,12 @@ class SearchActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_search)
 
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
+            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            view.updatePadding(top = statusBar.top)
+            insets
+        }
+
         toolbar = findViewById(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)
         clearIcon = findViewById(R.id.clearIcon)
@@ -88,7 +97,7 @@ class SearchActivity : AppCompatActivity() {
         historyAdapter = TrackAdapter { track: Track ->
             onTrackClick(track)
         }
-        historyAdapter.tracks = ArrayList(searchHistoryInteractor.getHistory())
+        historyAdapter.tracks = searchHistoryInteractor.getHistory().toMutableList()
 
         inputEditText.setOnFocusChangeListener { _, hasFocus ->
             val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistoryInteractor.getHistory().isNotEmpty()
@@ -165,7 +174,7 @@ class SearchActivity : AppCompatActivity() {
 
         if (isHistoryVisible) {
             trackRecyclerView.adapter = historyAdapter
-            historyAdapter.tracks = ArrayList(searchHistoryInteractor.getHistory())
+            historyAdapter.tracks = searchHistoryInteractor.getHistory().toMutableList()
             historyAdapter.notifyDataSetChanged()
             trackRecyclerView.isVisible = true
             placeholderContainer.isVisible = false
@@ -179,7 +188,7 @@ class SearchActivity : AppCompatActivity() {
         if (!clickDebounce()) return
 
         searchHistoryInteractor.addTrack(track)
-        historyAdapter.tracks = ArrayList(searchHistoryInteractor.getHistory())
+        historyAdapter.tracks = searchHistoryInteractor.getHistory().toMutableList()
         historyAdapter.notifyDataSetChanged()
 
         val intent = Intent(this, MediaActivity::class.java).apply {

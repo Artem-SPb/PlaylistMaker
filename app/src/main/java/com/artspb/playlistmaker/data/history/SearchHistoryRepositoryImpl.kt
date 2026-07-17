@@ -22,8 +22,8 @@ class SearchHistoryRepositoryImpl(
 
     override fun getHistory(): List<Track> {
         val json = sharedPreferences.getString(HISTORY_KEY, null) ?: return emptyList()
-        val type = object : TypeToken<ArrayList<TrackDto>>() {}.type
-        val dtos: ArrayList<TrackDto> = gson.fromJson(json, type) ?: return emptyList()
+        val type = object : TypeToken<List<TrackDto>>() {}.type
+        val dtos: List<TrackDto> = gson.fromJson(json, type) ?: return emptyList()
         return dtos.map { dto ->
             Track(
                 trackId = dto.trackId,

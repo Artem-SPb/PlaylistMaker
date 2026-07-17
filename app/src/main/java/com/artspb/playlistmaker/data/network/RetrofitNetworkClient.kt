@@ -16,10 +16,8 @@ import retrofit2.converter.gson.GsonConverterFactory
  */
 class RetrofitNetworkClient : NetworkClient {
 
-    private val itunesBaseUrl = "https://itunes.apple.com"
-
     private val retrofit = Retrofit.Builder()
-        .baseUrl(itunesBaseUrl)
+        .baseUrl(ITUNES_BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
@@ -41,5 +39,9 @@ class RetrofitNetworkClient : NetworkClient {
         } catch (e: Exception) {
             Response().apply { resultCode = 500 }
         }
+    }
+
+    private companion object {
+        const val ITUNES_BASE_URL = "https://itunes.apple.com"
     }
 }
