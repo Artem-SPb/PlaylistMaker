@@ -1,10 +1,12 @@
-package com.artspb.playlistmaker
+package com.artspb.playlistmaker.presentation.search
 
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.artspb.playlistmaker.domain.models.Track
 
-// Добавили в конструктор clickListener - лямбду, которая принимает Track и ничего не возвращает (Unit)
+/**
+ * Адаптер для отображения списка треков и истории прослушиваний (слой Presentation).
+ */
 class TrackAdapter(
     private val clickListener: (Track) -> Unit
 ) : RecyclerView.Adapter<TrackViewHolder>() {
@@ -18,12 +20,8 @@ class TrackAdapter(
     override fun getItemCount(): Int = tracks.size
 
     override fun onBindViewHolder(holder: TrackViewHolder, position: Int) {
-        // Отрисовываем трек
         holder.bind(tracks[position])
-
-        // Вешаем слушатель клика на весь элемент списка (itemView)
         holder.itemView.setOnClickListener {
-            // При клике вызываем лямбду и передаем в нее трек, по которому кликнули
             clickListener.invoke(tracks[position])
         }
     }

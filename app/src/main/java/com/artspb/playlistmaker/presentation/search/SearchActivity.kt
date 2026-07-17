@@ -1,4 +1,4 @@
-package com.artspb.playlistmaker
+package com.artspb.playlistmaker.presentation.search
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -21,24 +21,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import com.artspb.playlistmaker.Creator
+import com.artspb.playlistmaker.R
+import com.artspb.playlistmaker.domain.history.SearchHistoryInteractor
+import com.artspb.playlistmaker.domain.models.Track
+import com.artspb.playlistmaker.domain.search.TracksInteractor
+import com.artspb.playlistmaker.presentation.player.MediaActivity
 
 class SearchActivity : AppCompatActivity() {
 
-    // Инициализирую Retrofit и API
-    private val itunesBaseUrl = "https://itunes.apple.com"
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(itunesBaseUrl)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-    private val itunesService = retrofit.create(ItunesApi::class.java)
+    // Получаем интеракторы из Creator (Clean Architecture)
+    private val tracksInteractor: TracksInteractor = Creator.provideTracksInteractor()
+    private val searchHistoryInteractor: SearchHistoryInteractor = Creator.provideSearchHistoryInteractor()
 
-    // Переменные для истории поиска
-    private lateinit var searchHistory: SearchHistory
     private lateinit var historyHeader: View
     private lateinit var clearHistoryButton: Button
 
@@ -47,12 +42,10 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private var searchText: String = SEARCH_DEF
 
-    // Адаптеры для результатов и истории (теперь используют один и тот же RecyclerView по рекомендации ревьюера)
     private lateinit var trackAdapter: TrackAdapter
     private lateinit var historyAdapter: TrackAdapter
     private lateinit var trackRecyclerView: RecyclerView
 
-    // UI-элементы для заглушек и загрузки
     private lateinit var placeholderContainer: LinearLayout
     private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
@@ -61,11 +54,9 @@ class SearchActivity : AppCompatActivity() {
 
     private var lastSearchQuery = ""
 
-    // Handler и Runnable для автоматического поиска с debounce (Спринт 14)
     private val handler = Handler(Looper.getMainLooper())
     private val searchRunnable = Runnable { searchTracks(inputEditText.text.toString()) }
 
-    // Флаг для ограничения частоты кликов (защита от двойного открытия плеера)
     private var isClickAllowed = true
 
     @SuppressLint("MissingInflatedId")
@@ -74,10 +65,6 @@ class SearchActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_search)
 
-        // Инициализирую класс истории поиска
-        searchHistory = SearchHistory(getSharedPreferences(PLAYLIST_MAKER_PREFERENCES, Context.MODE_PRIVATE), com.google.gson.Gson())
-
-        // Инициализирую View компоненты
         toolbar = findViewById(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)
         clearIcon = findViewById(R.id.clearIcon)
@@ -93,49 +80,37 @@ class SearchActivity : AppCompatActivity() {
 
         toolbar.setNavigationOnClickListener { finish() }
 
-        // --- НАСТРОЙКА АДАПТЕРОВ ---
-
-        // 1. Адаптер для результатов поиска
         trackAdapter = TrackAdapter { track: Track ->
             onTrackClick(track)
         }
         trackRecyclerView.adapter = trackAdapter
 
-        // 2. Адаптер для истории поиска
         historyAdapter = TrackAdapter { track: Track ->
             onTrackClick(track)
         }
-        // При старте экрана сразу подтягиваем историю из памяти
-        historyAdapter.tracks = searchHistory.getHistory()
+        historyAdapter.tracks = ArrayList(searchHistoryInteractor.getHistory())
 
-        // --- ЛОГИКА ФОКУСА ---
         inputEditText.setOnFocusChangeListener { _, hasFocus ->
-            val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistory.getHistory().isNotEmpty()
+            val isHistoryVisible = hasFocus && inputEditText.text.isEmpty() && searchHistoryInteractor.getHistory().isNotEmpty()
             setHistoryMode(isHistoryVisible)
         }
 
-        // Очистка поля ввода по нажатию на крестик
         clearIcon.setOnClickListener {
             inputEditText.setText("")
             val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
 
-            // Отменяем отложенный запрос поиска, если он был запланирован
             handler.removeCallbacks(searchRunnable)
-
-            // Очищаем результаты поиска
             trackAdapter.tracks.clear()
             trackAdapter.notifyDataSetChanged()
 
-            // Если история не пуста, после очистки поля она должна появиться
-            if (searchHistory.getHistory().isNotEmpty()) {
+            if (searchHistoryInteractor.getHistory().isNotEmpty()) {
                 setHistoryMode(true)
             } else {
                 showPlaceholder(PlaceholderState.SUCCESS)
             }
         }
 
-        // Отслеживаем ввод текста
         val simpleTextWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -143,8 +118,7 @@ class SearchActivity : AppCompatActivity() {
                 searchText = s?.toString() ?: ""
                 clearIcon.isVisible = !s.isNullOrEmpty()
 
-                // Прячем или показываем историю на лету при изменении текста
-                val isHistoryVisible = inputEditText.hasFocus() && s?.isEmpty() == true && searchHistory.getHistory().isNotEmpty()
+                val isHistoryVisible = inputEditText.hasFocus() && s?.isEmpty() == true && searchHistoryInteractor.getHistory().isNotEmpty()
                 if (isHistoryVisible) {
                     setHistoryMode(true)
                     handler.removeCallbacks(searchRunnable)
@@ -156,7 +130,6 @@ class SearchActivity : AppCompatActivity() {
                     handler.removeCallbacks(searchRunnable)
                 } else {
                     setHistoryMode(false)
-                    // Запускаем debounce поиска при каждом изменении текста
                     searchDebounce()
                 }
             }
@@ -165,7 +138,6 @@ class SearchActivity : AppCompatActivity() {
         }
         inputEditText.addTextChangedListener(simpleTextWatcher)
 
-        // Обработка кнопки "Done" (Enter)
         inputEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 if (inputEditText.text.isNotEmpty()) {
@@ -175,32 +147,25 @@ class SearchActivity : AppCompatActivity() {
             } else false
         }
 
-        // Обработка кнопки "Обновить"
         refreshButton.setOnClickListener {
             searchTracks(lastSearchQuery)
         }
 
-        // Обработка кнопки "Очистить историю"
         clearHistoryButton.setOnClickListener {
-            searchHistory.clearHistory()
+            searchHistoryInteractor.clearHistory()
             historyAdapter.tracks.clear()
             historyAdapter.notifyDataSetChanged()
             setHistoryMode(false)
         }
     }
 
-    /**
-     * Отображение или сокрытие режима истории поиска (по рекомендации ревьюера).
-     * Вместо второго RecyclerView и ScrollView мы используем один trackRecyclerView,
-     * динамически подменяя в нем адаптер и показывая/скрывая заголовок с кнопкой очистки.
-     */
     private fun setHistoryMode(isHistoryVisible: Boolean) {
         historyHeader.isVisible = isHistoryVisible
         clearHistoryButton.isVisible = isHistoryVisible
 
         if (isHistoryVisible) {
             trackRecyclerView.adapter = historyAdapter
-            historyAdapter.tracks = searchHistory.getHistory()
+            historyAdapter.tracks = ArrayList(searchHistoryInteractor.getHistory())
             historyAdapter.notifyDataSetChanged()
             trackRecyclerView.isVisible = true
             placeholderContainer.isVisible = false
@@ -210,30 +175,16 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Единый метод обработки клика по треку.
-     * Выносим сюда логику, чтобы не дублировать код для trackAdapter и historyAdapter.
-     */
     private fun onTrackClick(track: Track) {
-        // Защита от быстрого двойного нажатия (Debounce клика из Спринта 14)
         if (!clickDebounce()) return
 
-        // 1. Добавляем трек в историю (он поднимется наверх)
-        searchHistory.addTrack(track)
-
-        // 2. Обновляем адаптер истории
-        historyAdapter.tracks = searchHistory.getHistory()
+        searchHistoryInteractor.addTrack(track)
+        historyAdapter.tracks = ArrayList(searchHistoryInteractor.getHistory())
         historyAdapter.notifyDataSetChanged()
 
-        // 3. Создаем Intent для перехода на экран плеера (MediaActivity)
         val intent = Intent(this, MediaActivity::class.java).apply {
-            // ПЕРЕДАЕМ ОБЪЕКТ НАПРЯМУЮ:
-            // Благодаря интерфейсу Parcelable и плагину kotlin-parcelize,
-            // мы можем передать объект track напрямую, без сериализации в JSON.
             putExtra(MediaActivity.EXTRA_TRACK, track)
         }
-
-        // Запускаем экран плеера
         startActivity(intent)
     }
 
@@ -241,51 +192,38 @@ class SearchActivity : AppCompatActivity() {
         if (query.isEmpty()) return
 
         lastSearchQuery = query
-
-        // Показываем индикатор загрузки перед выполнением сетевого запроса
         showPlaceholder(PlaceholderState.LOADING)
-
-        // При начале поиска обязательно скрываем историю
         setHistoryMode(false)
 
         val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
 
-        itunesService.search(query).enqueue(object : Callback<TrackResponse> {
-            override fun onResponse(call: Call<TrackResponse>, response: Response<TrackResponse>) {
-                if (response.isSuccessful) {
-                    trackAdapter.tracks.clear()
-                    val results = response.body()?.results
-                    if (!results.isNullOrEmpty()) {
-                        trackAdapter.tracks.addAll(results)
-                        trackAdapter.notifyDataSetChanged()
-                        showPlaceholder(PlaceholderState.SUCCESS)
-                    } else {
-                        trackAdapter.notifyDataSetChanged()
-                        showPlaceholder(PlaceholderState.NOT_FOUND)
+        tracksInteractor.searchTracks(query, object : TracksInteractor.TracksConsumer {
+            override fun consume(foundTracks: List<Track>?, errorMessage: String?) {
+                handler.post {
+                    if (errorMessage != null) {
+                        showPlaceholder(PlaceholderState.ERROR)
+                    } else if (foundTracks != null) {
+                        trackAdapter.tracks.clear()
+                        if (foundTracks.isNotEmpty()) {
+                            trackAdapter.tracks.addAll(foundTracks)
+                            trackAdapter.notifyDataSetChanged()
+                            showPlaceholder(PlaceholderState.SUCCESS)
+                        } else {
+                            trackAdapter.notifyDataSetChanged()
+                            showPlaceholder(PlaceholderState.NOT_FOUND)
+                        }
                     }
-                } else {
-                    showPlaceholder(PlaceholderState.ERROR)
                 }
-            }
-
-            override fun onFailure(call: Call<TrackResponse>, t: Throwable) {
-                showPlaceholder(PlaceholderState.ERROR)
             }
         })
     }
 
-    /**
-     * Запуск отложенного поиска с задержкой 2 секунды (Debounce)
-     */
     private fun searchDebounce() {
         handler.removeCallbacks(searchRunnable)
         handler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_DELAY)
     }
 
-    /**
-     * Ограничение частоты нажатий на элементы списка (Debounce клика)
-     */
     private fun clickDebounce(): Boolean {
         val current = isClickAllowed
         if (isClickAllowed) {
@@ -342,13 +280,12 @@ class SearchActivity : AppCompatActivity() {
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        searchText = savedInstanceState.getString(SEARCH_TEXT, SEARCH_DEF)
+        searchText = savedInstanceState.getString(SEARCH_TEXT, SEARCH_DEF) ?: SEARCH_DEF
         inputEditText.setText(searchText)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Обязательно удаляем коллбеки при закрытии Activity для предотвращения утечек памяти
         handler.removeCallbacksAndMessages(null)
     }
 
