@@ -1,31 +1,29 @@
 package com.artspb.playlistmaker
 
 import android.app.Application
-import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
+import com.artspb.playlistmaker.domain.settings.SettingsInteractor
 
-// Выносим константы на уровень файла, чтобы использовать их в SettingsActivity
 const val PLAYLIST_MAKER_PREFERENCES = "playlist_maker_preferences"
-const val DARK_THEME_KEY = "key_for_dark_theme"
 
+/**
+ * Главный класс приложения. Инициализирует Creator и применяет сохраненную тему.
+ */
 class App : Application() {
-    // Здесь я храню текущее состояние темы, чтобы другие экраны могли к нему обратиться
-    var darkTheme = false
-    private lateinit var sharedPrefs: SharedPreferences
 
     override fun onCreate() {
         super.onCreate()
-        // Инициализируем SharedPreferences при старте приложения
-        sharedPrefs = getSharedPreferences(PLAYLIST_MAKER_PREFERENCES, MODE_PRIVATE)
-        // Читаем сохраненную тему (по умолчанию false - светлая)
-        darkTheme = sharedPrefs.getBoolean(DARK_THEME_KEY, false)
-        // Применяем тему сразу при запуске
-        switchTheme(darkTheme)
+        Creator.init(this)
+
+        val settingsInteractor: SettingsInteractor = Creator.provideSettingsInteractor()
+        val themeSettings = settingsInteractor.getThemeSettings()
+        switchTheme(themeSettings.darkTheme)
     }
 
-    // Метод для переключения темы (использую AppCompatDelegate)
+    /**
+     * Переключение дневной/ночной темы приложения.
+     */
     fun switchTheme(darkThemeEnabled: Boolean) {
-        darkTheme = darkThemeEnabled
         AppCompatDelegate.setDefaultNightMode(
             if (darkThemeEnabled) {
                 AppCompatDelegate.MODE_NIGHT_YES

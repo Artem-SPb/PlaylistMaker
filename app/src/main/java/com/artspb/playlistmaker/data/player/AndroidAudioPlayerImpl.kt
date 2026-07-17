@@ -1,15 +1,15 @@
-package com.artspb.playlistmaker
+package com.artspb.playlistmaker.data.player
 
 import android.media.MediaPlayer
+import com.artspb.playlistmaker.domain.player.AudioPlayerControl
+import com.artspb.playlistmaker.domain.player.PlayerState
 
 /**
- * Реализация интерфейса AudioPlayerControl на базе стандартного Android MediaPlayer.
- * Инкапсулирует в себе всю низкоуровневую работу с аудиопотоком.
+ * Реализация контроллера `AudioPlayerControl` на базе стандартного Android `MediaPlayer` в слое Data.
  *
- * Почему это Best Practices:
- * 1. Вся специфика работы с MediaPlayer (установка слушателей, асинхронная подготовка, отлов исключений)
- *    скрыта внутри одного класса. UI-слой (MediaActivity) больше не перегружен деталями реализации плеера.
- * 2. Обеспечивается строгое соответствие перечислению PlayerState при любом событии плеера.
+ * Почему я сделал именно так (Clean Architecture):
+ * 1. `MediaPlayer` является частью Android SDK (инфраструктурный слой), поэтому его реализацию я перенес сюда, в `data.player`.
+ * 2. Вся низкоуровневая специфика работы с аудиопотоком надежно скрыта за абстракцией слоя Domain.
  */
 class AndroidAudioPlayerImpl : AudioPlayerControl {
 
