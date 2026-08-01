@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     // Я подключаю библиотеку Glide для удобной загрузки,
     // кэширования и трансформации изображений (обложек)
     implementation("com.github.bumptech.glide:glide:4.16.0")

@@ -13,7 +13,7 @@
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
         android:name=".App">
         <activity
-            android:name=".presentation.main.MainActivity"
+            android:name=".main.ui.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,9 +21,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".presentation.settings.SettingsActivity" />
-        <activity android:name=".presentation.search.SearchActivity" />
-        <activity android:name=".presentation.player.MediaActivity" />
+        <activity android:name=".settings.ui.SettingsActivity" />
+        <activity android:name=".search.ui.SearchActivity" />
+        <activity android:name=".player.ui.MediaActivity" />
     </application>
 
 </manifest>
