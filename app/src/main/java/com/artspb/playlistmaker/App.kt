@@ -2,7 +2,8 @@ package com.artspb.playlistmaker
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
-import com.artspb.playlistmaker.domain.settings.SettingsInteractor
+import com.artspb.playlistmaker.creator.Creator
+import com.artspb.playlistmaker.settings.domain.SettingsInteractor
 
 const val PLAYLIST_MAKER_PREFERENCES = "playlist_maker_preferences"
 
