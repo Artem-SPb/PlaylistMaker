@@ -41,7 +41,7 @@ class MediaActivity : AppCompatActivity() {
             return
         }
 
-        viewModel = ViewModelProvider(this, MediaViewModel.getFactory(track.previewUrl))
+        viewModel = ViewModelProvider(this, MediaViewModel.getFactory(track))
             .get(MediaViewModel::class.java)
 
         val backButton = findViewById<ImageButton>(R.id.backButton)
@@ -59,32 +59,34 @@ class MediaActivity : AppCompatActivity() {
             finish()
         }
 
-        trackName.text = track.trackName
-        artistName.text = track.artistName
-        durationValue.text = dateFormat.format(track.trackTimeMillis)
-        genreValue.text = track.primaryGenreName
-        countryValue.text = track.country
+        viewModel.trackInfo.observe(this) { currentTrack ->
+            trackName.text = currentTrack.trackName
+            artistName.text = currentTrack.artistName
+            durationValue.text = dateFormat.format(currentTrack.trackTimeMillis)
+            genreValue.text = currentTrack.primaryGenreName
+            countryValue.text = currentTrack.country
 
-        if (!track.collectionName.isNullOrEmpty()) {
-            albumValue.text = track.collectionName
-            albumGroup.visibility = View.VISIBLE
-        } else {
-            albumGroup.visibility = View.GONE
+            if (!currentTrack.collectionName.isNullOrEmpty()) {
+                albumValue.text = currentTrack.collectionName
+                albumGroup.visibility = View.VISIBLE
+            } else {
+                albumGroup.visibility = View.GONE
+            }
+
+            if (!currentTrack.releaseDate.isNullOrEmpty() && currentTrack.releaseDate.length >= 4) {
+                yearValue.text = currentTrack.releaseDate.substring(0, 4)
+            } else {
+                yearValue.text = ""
+            }
+
+            val cornerRadius = resources.getDimensionPixelSize(R.dimen.player_cover_corner_radius)
+            Glide.with(this)
+                .load(currentTrack.getCoverArtwork())
+                .placeholder(R.drawable.ic_placeholder)
+                .centerCrop()
+                .transform(RoundedCorners(cornerRadius))
+                .into(coverImageView)
         }
-
-        if (!track.releaseDate.isNullOrEmpty() && track.releaseDate.length >= 4) {
-            yearValue.text = track.releaseDate.substring(0, 4)
-        } else {
-            yearValue.text = ""
-        }
-
-        val cornerRadius = resources.getDimensionPixelSize(R.dimen.player_cover_corner_radius)
-        Glide.with(this)
-            .load(track.getCoverArtwork())
-            .placeholder(R.drawable.ic_placeholder)
-            .centerCrop()
-            .transform(RoundedCorners(cornerRadius))
-            .into(coverImageView)
 
         playButton = findViewById(R.id.playButton)
         playbackTimeTextView = findViewById(R.id.playbackTimeTextView)

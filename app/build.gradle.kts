@@ -43,13 +43,13 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     // Я подключаю библиотеку Glide для удобной загрузки,
     // кэширования и трансформации изображений (обложек)
-    implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.glide)
     // Подключаем Retrofit для сетевых запросов и конвертер Gson для парсинга JSON
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

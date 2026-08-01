@@ -11,11 +11,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.artspb.playlistmaker.creator.Creator
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
+import com.artspb.playlistmaker.search.domain.models.Track
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MediaViewModel(
-    private val trackUrl: String?,
+    private val track: Track,
     private val audioPlayer: AudioPlayerInteractor
 ) : ViewModel() {
 
@@ -24,6 +25,9 @@ class MediaViewModel(
 
     private val _progressTime = MutableLiveData("00:00")
     val progressTime: LiveData<String> = _progressTime
+
+    private val _trackInfo = MutableLiveData<Track>()
+    val trackInfo: LiveData<Track> = _trackInfo
 
     private val handler = Handler(Looper.getMainLooper())
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
@@ -52,10 +56,10 @@ class MediaViewModel(
     }
 
     private fun preparePlayer() {
-        if (trackUrl.isNullOrEmpty()) return
+        if (track.previewUrl.isNullOrEmpty()) return
 
         audioPlayer.preparePlayer(
-            url = trackUrl,
+            url = track.previewUrl,
             onPrepared = {
                 _playerState.postValue(PlayerState.PREPARED)
             },
@@ -122,10 +126,10 @@ class MediaViewModel(
     companion object {
         private const val UPDATE_TIMER_DELAY = 300L
 
-        fun getFactory(trackUrl: String?): ViewModelProvider.Factory = viewModelFactory {
+        fun getFactory(track: Track): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 MediaViewModel(
-                    trackUrl = trackUrl,
+                    track = track,
                     audioPlayer = Creator.provideAudioPlayerInteractor()
                 )
             }
