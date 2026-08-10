@@ -2,8 +2,11 @@ package com.artspb.playlistmaker.search.data.network
 
 import com.artspb.playlistmaker.search.data.dto.Response
 import com.artspb.playlistmaker.search.data.dto.TracksSearchRequest
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+
+
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 
 /**
  * Моя реализация сетевого клиента на базе Retrofit в слое Data.
@@ -11,19 +14,32 @@ import retrofit2.converter.gson.GsonConverterFactory
  * Почему я сделал именно так (Clean Architecture):
  * 1. Выполняю синхронный запрос `execute()`, так как вызов метода `doRequest` уже происходит
  *    в фоновом потоке из интерактора (через `ExecutorService`).
- * 2. Все исключения сети (например, отсутствие интернета) я отлавливаю внутри и возвращаю `resultCode = 500`.
- *    Это гарантирует, что приложение не упадет, а UI сможет корректно показать плейсхолдер ошибки.
+ * 2. Добавил проверку интернет-соединения через ConnectivityManager, как рекомендовали в теории 17 спринта.
  */
-class RetrofitNetworkClient : NetworkClient {
+class RetrofitNetworkClient(
+    private val itunesService: ItunesApi,
+    private val context: Context
+) : NetworkClient {
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(ITUNES_BASE_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    private val itunesService = retrofit.create(ItunesApi::class.java)
+    private fun isConnected(): Boolean {
+        val connectivityManager = context.getSystemService(
+            Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+        if (capabilities != null) {
+            when {
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> return true
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> return true
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> return true
+            }
+        }
+        return false
+    }
 
     override fun doRequest(dto: Any): Response {
+        if (!isConnected()) {
+            return Response().apply { resultCode = -1 }
+        }
+
         if (dto !is TracksSearchRequest) {
             return Response().apply { resultCode = 400 }
         }

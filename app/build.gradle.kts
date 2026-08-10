@@ -50,6 +50,7 @@ dependencies {
     // Подключаем Retrofit для сетевых запросов и конвертер Gson для парсинга JSON
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.koin.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

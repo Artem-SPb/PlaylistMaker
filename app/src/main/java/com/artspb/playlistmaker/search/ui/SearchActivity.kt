@@ -23,16 +23,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.artspb.playlistmaker.R
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.ui.models.SearchState
 import com.artspb.playlistmaker.player.ui.MediaActivity
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SearchActivity : AppCompatActivity() {
 
-    private lateinit var viewModel: SearchViewModel
+    private val viewModel by viewModel<SearchViewModel>()
 
     private lateinit var historyHeader: View
     private lateinit var clearHistoryButton: Button
@@ -66,8 +66,7 @@ class SearchActivity : AppCompatActivity() {
             insets
         }
 
-        viewModel = ViewModelProvider(this, SearchViewModel.getFactory())
-            .get(SearchViewModel::class.java)
+
 
         toolbar = findViewById(R.id.toolbar)
         inputEditText = findViewById(R.id.inputEditText)

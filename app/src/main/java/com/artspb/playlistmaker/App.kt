@@ -2,21 +2,32 @@ package com.artspb.playlistmaker
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
-import com.artspb.playlistmaker.creator.Creator
+
 import com.artspb.playlistmaker.settings.domain.SettingsInteractor
+import org.koin.android.ext.android.getKoin
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+import com.artspb.playlistmaker.di.dataModule
+import com.artspb.playlistmaker.di.interactorModule
+import com.artspb.playlistmaker.di.repositoryModule
+import com.artspb.playlistmaker.di.viewModelModule
 
 const val PLAYLIST_MAKER_PREFERENCES = "playlist_maker_preferences"
 
 /**
- * Главный класс приложения. Инициализирует Creator и применяет сохраненную тему.
+ * Главный класс приложения. Инициализирует Koin и применяет сохраненную тему.
  */
 class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        Creator.init(this)
+        
+        startKoin {
+            androidContext(this@App)
+            modules(dataModule, repositoryModule, interactorModule, viewModelModule)
+        }
 
-        val settingsInteractor: SettingsInteractor = Creator.provideSettingsInteractor()
+        val settingsInteractor: SettingsInteractor = getKoin().get()
         val themeSettings = settingsInteractor.getThemeSettings()
         switchTheme(themeSettings.darkTheme)
     }

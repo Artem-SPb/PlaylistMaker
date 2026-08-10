@@ -16,6 +16,8 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import java.text.SimpleDateFormat
 import java.util.Locale
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 
 class MediaActivity : AppCompatActivity() {
 
@@ -23,7 +25,16 @@ class MediaActivity : AppCompatActivity() {
 
     private lateinit var playButton: ImageButton
     private lateinit var playbackTimeTextView: TextView
-    private lateinit var viewModel: MediaViewModel
+    
+    private val viewModel by viewModel<MediaViewModel> {
+        val track = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(EXTRA_TRACK, Track::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra<Track>(EXTRA_TRACK)
+        }
+        parametersOf(track)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +52,7 @@ class MediaActivity : AppCompatActivity() {
             return
         }
 
-        viewModel = ViewModelProvider(this, MediaViewModel.getFactory(track))
-            .get(MediaViewModel::class.java)
+
 
         val backButton = findViewById<ImageButton>(R.id.backButton)
         val coverImageView = findViewById<ImageView>(R.id.coverImageView)
