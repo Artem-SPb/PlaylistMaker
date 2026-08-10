@@ -5,10 +5,6 @@ import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.artspb.playlistmaker.creator.Creator
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
 import com.artspb.playlistmaker.search.domain.models.Track
@@ -125,14 +121,5 @@ class MediaViewModel(
 
     companion object {
         private const val UPDATE_TIMER_DELAY = 300L
-
-        fun getFactory(track: Track): ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                MediaViewModel(
-                    track = track,
-                    audioPlayer = Creator.provideAudioPlayerInteractor()
-                )
-            }
-        }
     }
 }
