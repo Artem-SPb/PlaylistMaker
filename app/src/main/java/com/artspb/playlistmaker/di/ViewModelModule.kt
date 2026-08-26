@@ -16,6 +16,12 @@ val viewModelModule = module {
     viewModel {
         SettingsViewModel(get(), get())
     }
+    viewModel {
+        com.artspb.playlistmaker.medialibrary.ui.FavoritesViewModel()
+    }
+    viewModel {
+        com.artspb.playlistmaker.medialibrary.ui.PlaylistsViewModel()
+    }
 
     viewModel { (track: Track) ->
         MediaViewModel(track, get())

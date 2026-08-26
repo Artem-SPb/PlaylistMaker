@@ -50,8 +50,7 @@ class MainActivity : AppCompatActivity() {
         // СПОСОБ 2: Через лямбду (Переход на экран Медиатеки)
         // =========================================================
         mediaButton.setOnClickListener {
-            // Создаем Intent для перехода на MediaActivity
-            val mediaIntent = Intent(this, MediaActivity::class.java)
+            val mediaIntent = Intent(this, com.artspb.playlistmaker.medialibrary.ui.MedialibraryActivity::class.java)
             startActivity(mediaIntent)
         }
 

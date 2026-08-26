@@ -48,6 +48,7 @@ class MediaViewModel(
     }
 
     init {
+        _trackInfo.value = track
         preparePlayer()
     }
 

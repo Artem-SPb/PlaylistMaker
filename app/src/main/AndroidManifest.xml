@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -23,6 +24,11 @@
         </activity>
         <activity android:name=".settings.ui.SettingsActivity" />
         <activity android:name=".search.ui.SearchActivity" />
+        <activity
+            android:name=".medialibrary.ui.MedialibraryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <activity android:name=".player.ui.MediaActivity" />
     </application>
 
