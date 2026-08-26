@@ -37,4 +37,9 @@
     <string name="player_pause_button_description">Пауза</string>
     <string name="player_favorite_button_description">Добавить в избранное</string>
     <string name="player_default_time">00:00</string>
+    <string name="new_playlist_button">Новый плейлист</string>
+    <string name="empty_medialibrary">Ваша медиатека пуста</string>
+    <string name="empty_playlists">Вы не создали\nни одного плейлиста</string>
+    <string name="tab_favorites">Избранные треки</string>
+    <string name="tab_playlists">Плейлисты</string>
 </resources>
