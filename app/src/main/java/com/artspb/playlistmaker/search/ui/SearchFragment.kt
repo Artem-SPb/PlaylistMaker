@@ -1,4 +1,4 @@
-package com.artspb.playlistmaker.search.ui
+﻿package com.artspb.playlistmaker.search.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -7,76 +7,41 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.appcompat.widget.Toolbar
-import androidx.core.os.bundleOf
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.RecyclerView
 import com.artspb.playlistmaker.R
-import com.artspb.playlistmaker.player.ui.AudioPlayerFragment
+import com.artspb.playlistmaker.databinding.FragmentSearchBinding
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.ui.models.SearchState
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class SearchFragment : Fragment(R.layout.fragment_search) {
+class SearchFragment : Fragment() {
 
     private val viewModel by viewModel<SearchViewModel>()
 
-    private lateinit var historyHeader: View
-    private lateinit var clearHistoryButton: Button
-
-    private lateinit var inputEditText: EditText
-    private lateinit var clearIcon: ImageView
-    private lateinit var toolbar: Toolbar
+    private var _binding: FragmentSearchBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var trackAdapter: TrackAdapter
     private lateinit var historyAdapter: TrackAdapter
-    private lateinit var trackRecyclerView: RecyclerView
-
-    private lateinit var placeholderContainer: LinearLayout
-    private lateinit var placeholderImage: ImageView
-    private lateinit var placeholderMessage: TextView
-    private lateinit var refreshButton: Button
-    private lateinit var progressBarContainer: View
 
     private val handler = Handler(Looper.getMainLooper())
     private var isClickAllowed = true
 
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentSearchBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
     @SuppressLint("MissingInflatedId")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Делаем отступ от статус-бара, чтобы элементы не залезли на часы
-        ViewCompat.setOnApplyWindowInsetsListener(view.findViewById(R.id.main)) { v, insets ->
-            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.updatePadding(top = statusBar.top)
-            insets
-        }
-
-        toolbar = view.findViewById(R.id.toolbar)
-        inputEditText = view.findViewById(R.id.inputEditText)
-        clearIcon = view.findViewById(R.id.clearIcon)
-        trackRecyclerView = view.findViewById(R.id.trackRecyclerView)
-        placeholderContainer = view.findViewById(R.id.placeholderContainer)
-        placeholderImage = view.findViewById(R.id.placeholderImage)
-        placeholderMessage = view.findViewById(R.id.placeholderMessage)
-        refreshButton = view.findViewById(R.id.refreshButton)
-        progressBarContainer = view.findViewById(R.id.progressBarContainer)
-
-        historyHeader = view.findViewById(R.id.historyHeader)
-        clearHistoryButton = view.findViewById(R.id.clearHistoryButton)
 
         trackAdapter = TrackAdapter { track: Track ->
             onTrackClick(track)
@@ -85,14 +50,14 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             onTrackClick(track)
         }
 
-        inputEditText.setOnFocusChangeListener { _, hasFocus ->
-            viewModel.onFocusChanged(hasFocus, inputEditText.text.toString())
+        binding.inputEditText.setOnFocusChangeListener { _, hasFocus ->
+            viewModel.onFocusChanged(hasFocus, binding.inputEditText.text.toString())
         }
 
-        clearIcon.setOnClickListener {
-            inputEditText.setText("")
+        binding.clearIcon.setOnClickListener {
+            binding.inputEditText.setText("")
             val inputMethodManager = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
+            inputMethodManager?.hideSoftInputFromWindow(binding.inputEditText.windowToken, 0)
             viewModel.onClearSearchClicked()
         }
 
@@ -100,26 +65,26 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                clearIcon.isVisible = !s.isNullOrEmpty()
+                binding.clearIcon.isVisible = !s.isNullOrEmpty()
                 viewModel.searchDebounce(s?.toString() ?: "")
             }
 
             override fun afterTextChanged(s: Editable?) {}
         }
-        inputEditText.addTextChangedListener(simpleTextWatcher)
+        binding.inputEditText.addTextChangedListener(simpleTextWatcher)
 
-        inputEditText.setOnEditorActionListener { _, actionId, _ ->
+        binding.inputEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                viewModel.searchRequest(inputEditText.text.toString())
+                viewModel.searchRequest(binding.inputEditText.text.toString())
                 true
             } else false
         }
 
-        refreshButton.setOnClickListener {
-            viewModel.searchRequest(inputEditText.text.toString())
+        binding.refreshButton.setOnClickListener {
+            viewModel.searchRequest(binding.inputEditText.text.toString())
         }
 
-        clearHistoryButton.setOnClickListener {
+        binding.clearHistoryButton.setOnClickListener {
             viewModel.clearHistory()
         }
 
@@ -131,56 +96,56 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private fun renderState(state: SearchState) {
         when (state) {
             is SearchState.Loading -> {
-                trackRecyclerView.isVisible = false
-                historyHeader.isVisible = false
-                clearHistoryButton.isVisible = false
-                placeholderContainer.isVisible = false
-                progressBarContainer.isVisible = true
+                binding.trackRecyclerView.isVisible = false
+                binding.historyHeader.isVisible = false
+                binding.clearHistoryButton.isVisible = false
+                binding.placeholderContainer.isVisible = false
+                binding.progressBarContainer.isVisible = true
             }
             is SearchState.Content -> {
                 trackAdapter.tracks.clear()
                 trackAdapter.tracks.addAll(state.tracks)
                 trackAdapter.notifyDataSetChanged()
 
-                trackRecyclerView.adapter = trackAdapter
-                trackRecyclerView.isVisible = true
-                historyHeader.isVisible = false
-                clearHistoryButton.isVisible = false
-                placeholderContainer.isVisible = false
-                progressBarContainer.isVisible = false
+                binding.trackRecyclerView.adapter = trackAdapter
+                binding.trackRecyclerView.isVisible = true
+                binding.historyHeader.isVisible = false
+                binding.clearHistoryButton.isVisible = false
+                binding.placeholderContainer.isVisible = false
+                binding.progressBarContainer.isVisible = false
             }
             is SearchState.Empty -> {
-                trackRecyclerView.isVisible = false
-                historyHeader.isVisible = false
-                clearHistoryButton.isVisible = false
-                placeholderContainer.isVisible = true
-                progressBarContainer.isVisible = false
-                refreshButton.isVisible = false
-                placeholderImage.setImageResource(R.drawable.ic_nothing_found)
-                placeholderMessage.text = getString(R.string.nothing_found)
+                binding.trackRecyclerView.isVisible = false
+                binding.historyHeader.isVisible = false
+                binding.clearHistoryButton.isVisible = false
+                binding.placeholderContainer.isVisible = true
+                binding.progressBarContainer.isVisible = false
+                binding.refreshButton.isVisible = false
+                binding.placeholderImage.setImageResource(R.drawable.ic_nothing_found)
+                binding.placeholderMessage.text = getString(R.string.nothing_found)
             }
             is SearchState.Error -> {
-                trackRecyclerView.isVisible = false
-                historyHeader.isVisible = false
-                clearHistoryButton.isVisible = false
-                placeholderContainer.isVisible = true
-                progressBarContainer.isVisible = false
-                refreshButton.isVisible = true
-                placeholderImage.setImageResource(R.drawable.ic_network_error)
-                placeholderMessage.text = getString(R.string.network_error)
+                binding.trackRecyclerView.isVisible = false
+                binding.historyHeader.isVisible = false
+                binding.clearHistoryButton.isVisible = false
+                binding.placeholderContainer.isVisible = true
+                binding.progressBarContainer.isVisible = false
+                binding.refreshButton.isVisible = true
+                binding.placeholderImage.setImageResource(R.drawable.ic_network_error)
+                binding.placeholderMessage.text = getString(R.string.network_error)
             }
             is SearchState.History -> {
                 historyAdapter.tracks.clear()
                 historyAdapter.tracks.addAll(state.tracks)
                 historyAdapter.notifyDataSetChanged()
 
-                trackRecyclerView.adapter = historyAdapter
+                binding.trackRecyclerView.adapter = historyAdapter
                 val isHistoryVisible = state.tracks.isNotEmpty()
-                trackRecyclerView.isVisible = isHistoryVisible
-                historyHeader.isVisible = isHistoryVisible
-                clearHistoryButton.isVisible = isHistoryVisible
-                placeholderContainer.isVisible = false
-                progressBarContainer.isVisible = false
+                binding.trackRecyclerView.isVisible = isHistoryVisible
+                binding.historyHeader.isVisible = isHistoryVisible
+                binding.clearHistoryButton.isVisible = isHistoryVisible
+                binding.placeholderContainer.isVisible = false
+                binding.progressBarContainer.isVisible = false
             }
         }
     }
@@ -190,12 +155,8 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         viewModel.addTrackToHistory(track)
 
-        // Переходим на экран плеера с помощью Jetpack Navigation Component
-        // и передаем выбранный трек через Bundle
-        findNavController().navigate(
-            R.id.action_searchFragment_to_audioPlayerFragment,
-            bundleOf(AudioPlayerFragment.EXTRA_TRACK to track)
-        )
+        val action = SearchFragmentDirections.actionSearchFragmentToAudioPlayerFragment(track)
+        findNavController().navigate(action)
     }
 
     private fun clickDebounce(): Boolean {
@@ -210,6 +171,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     override fun onDestroyView() {
         super.onDestroyView()
         handler.removeCallbacksAndMessages(null)
+        _binding = null
     }
 
     companion object {

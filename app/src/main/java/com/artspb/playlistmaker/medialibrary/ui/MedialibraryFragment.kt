@@ -1,39 +1,33 @@
-package com.artspb.playlistmaker.medialibrary.ui
+﻿package com.artspb.playlistmaker.medialibrary.ui
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.viewpager2.widget.ViewPager2
 import com.artspb.playlistmaker.R
-import com.google.android.material.tabs.TabLayout
+import com.artspb.playlistmaker.databinding.FragmentMedialibraryBinding
 import com.google.android.material.tabs.TabLayoutMediator
 
-class MedialibraryFragment : Fragment(R.layout.fragment_medialibrary) {
+class MedialibraryFragment : Fragment() {
 
-    private lateinit var tabLayout: TabLayout
-    private lateinit var viewPager: ViewPager2
+    private var _binding: FragmentMedialibraryBinding? = null
+    private val binding get() = _binding!!
 
     private var tabLayoutMediator: TabLayoutMediator? = null
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentMedialibraryBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        ViewCompat.setOnApplyWindowInsetsListener(view.findViewById(R.id.main)) { v, insets ->
-            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.updatePadding(top = statusBar.top)
-            insets
-        }
-
-        tabLayout = view.findViewById(R.id.tabLayout)
-        viewPager = view.findViewById(R.id.viewPager)
-
         val adapter = MedialibraryViewPagerAdapter(childFragmentManager, viewLifecycleOwner.lifecycle)
-        viewPager.adapter = adapter
+        binding.viewPager.adapter = adapter
 
-        tabLayoutMediator = TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+        tabLayoutMediator = TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             when (position) {
                 0 -> tab.text = getString(R.string.tab_favorites)
                 1 -> tab.text = getString(R.string.tab_playlists)
@@ -46,5 +40,6 @@ class MedialibraryFragment : Fragment(R.layout.fragment_medialibrary) {
         super.onDestroyView()
         tabLayoutMediator?.detach()
         tabLayoutMediator = null
+        _binding = null
     }
 }

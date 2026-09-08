@@ -35,16 +35,12 @@ class MainActivity : AppCompatActivity() {
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         bottomNavigationView.setupWithNavController(navController)
         
-        // 4. Скрываем BottomNavigationView на экране аудиоплеера
+        // 4. Показываем BottomNavigationView только на корневых экранах
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            when (destination.id) {
-                R.id.audioPlayerFragment -> {
-                    bottomNavigationView.visibility = View.GONE
-                }
-                else -> {
-                    bottomNavigationView.visibility = View.VISIBLE
-                }
-            }
+            val isBottomNavigationVisible = destination.id in setOf(
+                R.id.searchFragment, R.id.medialibraryFragment, R.id.settingsFragment
+            )
+            bottomNavigationView.visibility = if (isBottomNavigationVisible) View.VISIBLE else View.GONE
         }
     }
 }

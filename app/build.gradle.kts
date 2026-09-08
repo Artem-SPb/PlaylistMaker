@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // Добавляем плагин для автоматической генерации Parcelable
     id("kotlin-parcelize")
+    id("androidx.navigation.safeargs.kotlin")
 }
 
 android {
@@ -27,6 +28,9 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+    buildFeatures {
+        viewBinding = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
