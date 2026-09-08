@@ -12,9 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="@string/settings"
-        app:titleTextAppearance="@style/MainTitleTextStyle"
-        app:navigationIcon="@drawable/ic_arrow_back_24"
-        app:navigationIconTint="@color/primary_text_color" />
+        app:titleTextAppearance="@style/MainTitleTextStyle" />
 
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/themeSwitcher"

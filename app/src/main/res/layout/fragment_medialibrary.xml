@@ -13,8 +13,6 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/ic_arrow_back_24"
-        app:navigationIconTint="@color/primary_text_color"
         app:title="@string/media_library"
         app:titleTextColor="@color/primary_text_color"
         app:titleTextAppearance="@style/MainTitleTextStyle" />

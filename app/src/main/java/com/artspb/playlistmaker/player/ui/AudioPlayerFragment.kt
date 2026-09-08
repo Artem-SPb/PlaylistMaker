@@ -6,70 +6,68 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.Group
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.artspb.playlistmaker.R
-import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.player.domain.PlayerState
+import com.artspb.playlistmaker.search.domain.models.Track
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import java.text.SimpleDateFormat
-import java.util.Locale
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
+import java.text.SimpleDateFormat
+import java.util.Locale
 
-class MediaActivity : AppCompatActivity() {
+class AudioPlayerFragment : Fragment(R.layout.fragment_audio_player) {
 
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
     private lateinit var playButton: ImageButton
     private lateinit var playbackTimeTextView: TextView
-    
+
     private val viewModel by viewModel<MediaViewModel> {
+        // Достаем трек из аргументов фрагмента, переданных через Navigation Component
         val track = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(EXTRA_TRACK, Track::class.java)
+            requireArguments().getParcelable(EXTRA_TRACK, Track::class.java)
         } else {
             @Suppress("DEPRECATION")
-            intent.getParcelableExtra<Track>(EXTRA_TRACK)
+            requireArguments().getParcelable<Track>(EXTRA_TRACK)
         }
         parametersOf(track)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_audio_player)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         val track = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(EXTRA_TRACK, Track::class.java)
+            arguments?.getParcelable(EXTRA_TRACK, Track::class.java)
         } else {
             @Suppress("DEPRECATION")
-            intent.getParcelableExtra<Track>(EXTRA_TRACK)
+            arguments?.getParcelable<Track>(EXTRA_TRACK)
         }
 
         if (track == null) {
-            finish()
+            findNavController().navigateUp()
             return
         }
 
-
-
-        val backButton = findViewById<ImageButton>(R.id.backButton)
-        val coverImageView = findViewById<ImageView>(R.id.coverImageView)
-        val trackName = findViewById<TextView>(R.id.trackNameTextView)
-        val artistName = findViewById<TextView>(R.id.artistNameTextView)
-        val durationValue = findViewById<TextView>(R.id.durationValue)
-        val albumGroup = findViewById<Group>(R.id.albumGroup)
-        val albumValue = findViewById<TextView>(R.id.albumValue)
-        val yearValue = findViewById<TextView>(R.id.yearValue)
-        val genreValue = findViewById<TextView>(R.id.genreValue)
-        val countryValue = findViewById<TextView>(R.id.countryValue)
+        val backButton = view.findViewById<ImageButton>(R.id.backButton)
+        val coverImageView = view.findViewById<ImageView>(R.id.coverImageView)
+        val trackName = view.findViewById<TextView>(R.id.trackNameTextView)
+        val artistName = view.findViewById<TextView>(R.id.artistNameTextView)
+        val durationValue = view.findViewById<TextView>(R.id.durationValue)
+        val albumGroup = view.findViewById<Group>(R.id.albumGroup)
+        val albumValue = view.findViewById<TextView>(R.id.albumValue)
+        val yearValue = view.findViewById<TextView>(R.id.yearValue)
+        val genreValue = view.findViewById<TextView>(R.id.genreValue)
+        val countryValue = view.findViewById<TextView>(R.id.countryValue)
 
         backButton.setOnClickListener {
-            finish()
+            findNavController().navigateUp()
         }
 
-        viewModel.trackInfo.observe(this) { currentTrack ->
+        viewModel.trackInfo.observe(viewLifecycleOwner) { currentTrack ->
             trackName.text = currentTrack.trackName
             artistName.text = currentTrack.artistName
             durationValue.text = dateFormat.format(currentTrack.trackTimeMillis)
@@ -98,14 +96,14 @@ class MediaActivity : AppCompatActivity() {
                 .into(coverImageView)
         }
 
-        playButton = findViewById(R.id.playButton)
-        playbackTimeTextView = findViewById(R.id.playbackTimeTextView)
+        playButton = view.findViewById(R.id.playButton)
+        playbackTimeTextView = view.findViewById(R.id.playbackTimeTextView)
 
         playButton.setOnClickListener {
             viewModel.onPlayButtonClicked()
         }
 
-        viewModel.playerState.observe(this) { state ->
+        viewModel.playerState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 PlayerState.PLAYING -> {
                     playButton.setImageResource(R.drawable.ic_pause_circle)
@@ -124,7 +122,7 @@ class MediaActivity : AppCompatActivity() {
             }
         }
 
-        viewModel.progressTime.observe(this) { timeString ->
+        viewModel.progressTime.observe(viewLifecycleOwner) { timeString ->
             playbackTimeTextView.text = timeString
         }
     }

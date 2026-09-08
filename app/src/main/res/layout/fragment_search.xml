@@ -13,9 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="@string/search"
-        app:titleTextAppearance="@style/MainTitleTextStyle"
-        app:navigationIcon="@drawable/ic_arrow_back_24"
-        app:navigationIconTint="@color/primary_text_color" />
+        app:titleTextAppearance="@style/MainTitleTextStyle" />
 
     <FrameLayout
         android:layout_width="match_parent"

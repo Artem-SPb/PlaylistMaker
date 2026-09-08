@@ -2,7 +2,6 @@ package com.artspb.playlistmaker.search.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,21 +15,22 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
+import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.artspb.playlistmaker.R
+import com.artspb.playlistmaker.player.ui.AudioPlayerFragment
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.ui.models.SearchState
-import com.artspb.playlistmaker.player.ui.MediaActivity
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class SearchActivity : AppCompatActivity() {
+class SearchFragment : Fragment(R.layout.fragment_search) {
 
     private val viewModel by viewModel<SearchViewModel>()
 
@@ -55,33 +55,28 @@ class SearchActivity : AppCompatActivity() {
     private var isClickAllowed = true
 
     @SuppressLint("MissingInflatedId")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_search)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
+        // Делаем отступ от статус-бара, чтобы элементы не залезли на часы
+        ViewCompat.setOnApplyWindowInsetsListener(view.findViewById(R.id.main)) { v, insets ->
             val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            view.updatePadding(top = statusBar.top)
+            v.updatePadding(top = statusBar.top)
             insets
         }
 
+        toolbar = view.findViewById(R.id.toolbar)
+        inputEditText = view.findViewById(R.id.inputEditText)
+        clearIcon = view.findViewById(R.id.clearIcon)
+        trackRecyclerView = view.findViewById(R.id.trackRecyclerView)
+        placeholderContainer = view.findViewById(R.id.placeholderContainer)
+        placeholderImage = view.findViewById(R.id.placeholderImage)
+        placeholderMessage = view.findViewById(R.id.placeholderMessage)
+        refreshButton = view.findViewById(R.id.refreshButton)
+        progressBarContainer = view.findViewById(R.id.progressBarContainer)
 
-
-        toolbar = findViewById(R.id.toolbar)
-        inputEditText = findViewById(R.id.inputEditText)
-        clearIcon = findViewById(R.id.clearIcon)
-        trackRecyclerView = findViewById(R.id.trackRecyclerView)
-        placeholderContainer = findViewById(R.id.placeholderContainer)
-        placeholderImage = findViewById(R.id.placeholderImage)
-        placeholderMessage = findViewById(R.id.placeholderMessage)
-        refreshButton = findViewById(R.id.refreshButton)
-        progressBarContainer = findViewById(R.id.progressBarContainer)
-
-        historyHeader = findViewById(R.id.historyHeader)
-        clearHistoryButton = findViewById(R.id.clearHistoryButton)
-
-        toolbar.setNavigationOnClickListener { finish() }
+        historyHeader = view.findViewById(R.id.historyHeader)
+        clearHistoryButton = view.findViewById(R.id.clearHistoryButton)
 
         trackAdapter = TrackAdapter { track: Track ->
             onTrackClick(track)
@@ -96,7 +91,7 @@ class SearchActivity : AppCompatActivity() {
 
         clearIcon.setOnClickListener {
             inputEditText.setText("")
-            val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            val inputMethodManager = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             inputMethodManager?.hideSoftInputFromWindow(inputEditText.windowToken, 0)
             viewModel.onClearSearchClicked()
         }
@@ -128,7 +123,7 @@ class SearchActivity : AppCompatActivity() {
             viewModel.clearHistory()
         }
 
-        viewModel.state.observe(this) { state ->
+        viewModel.state.observe(viewLifecycleOwner) { state ->
             renderState(state)
         }
     }
@@ -195,10 +190,12 @@ class SearchActivity : AppCompatActivity() {
 
         viewModel.addTrackToHistory(track)
 
-        val intent = Intent(this, MediaActivity::class.java).apply {
-            putExtra(MediaActivity.EXTRA_TRACK, track)
-        }
-        startActivity(intent)
+        // Переходим на экран плеера с помощью Jetpack Navigation Component
+        // и передаем выбранный трек через Bundle
+        findNavController().navigate(
+            R.id.action_searchFragment_to_audioPlayerFragment,
+            bundleOf(AudioPlayerFragment.EXTRA_TRACK to track)
+        )
     }
 
     private fun clickDebounce(): Boolean {
@@ -210,8 +207,8 @@ class SearchActivity : AppCompatActivity() {
         return current
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
         handler.removeCallbacksAndMessages(null)
     }
 
