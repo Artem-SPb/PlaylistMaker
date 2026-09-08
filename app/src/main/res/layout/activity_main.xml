@@ -6,39 +6,32 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/main_screen_background_color"
-    android:padding="@dimen/padding_standard">
+    android:background="@color/screen_background_color">
 
-    <!-- Заголовок -->
-    <TextView
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/nav_graph" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/yp_light_gray" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/main_title"
-        android:textColor="@color/yp_white"
-        android:textSize="@dimen/text_size_title"
-        android:textStyle="bold"
-        android:fontFamily="@font/ys_display_medium"
-        android:layout_marginBottom="32dp" />
-
-    <!-- Кнопка Поиск -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/search_button"
-        style="@style/MainScreenButtonStyle"
-        android:text="@string/search"
-        app:icon="@drawable/ic_search_24" />
-
-    <!-- Кнопка Медиатека -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/media_button"
-        style="@style/MainScreenButtonStyle"
-        android:text="@string/media_library"
-        app:icon="@drawable/ic_library_24" />
-
-    <!-- Кнопка Настройки -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/settings_button"
-        style="@style/MainScreenButtonStyle"
-        android:text="@string/settings"
-        app:icon="@drawable/ic_settings_24" />
+        app:menu="@menu/bottom_navigation_menu"
+        app:itemIconTint="@color/bottom_nav_colors"
+        app:itemTextColor="@color/bottom_nav_colors"
+        app:itemTextAppearanceActive="@style/BottomNavigationViewTextStyle"
+        app:itemTextAppearanceInactive="@style/BottomNavigationViewTextStyle"
+        app:labelVisibilityMode="labeled"
+        android:background="@color/screen_background_color" />
 
 </LinearLayout>

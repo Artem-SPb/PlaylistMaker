@@ -1,18 +1,16 @@
 package com.artspb.playlistmaker.main.ui
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.artspb.playlistmaker.R
-import com.artspb.playlistmaker.player.ui.MediaActivity
-import com.artspb.playlistmaker.search.ui.SearchActivity
-import com.artspb.playlistmaker.settings.ui.SettingsActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,37 +28,19 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val searchButton = findViewById<Button>(R.id.search_button)
-        val mediaButton = findViewById<Button>(R.id.media_button)
-        val settingsButton = findViewById<Button>(R.id.settings_button)
+        // 3. Настраиваем Navigation Component и BottomNavigationView
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
-        // =========================================================
-        // СПОСОБ 1: Через анонимный класс (Переход на экран Поиска)
-        // =========================================================
-        val searchButtonClickListener: View.OnClickListener = object : View.OnClickListener {
-            override fun onClick(v: View?) {
-                // Создаем Intent для перехода на SearchActivity
-                val searchIntent = Intent(this@MainActivity, SearchActivity::class.java)
-                startActivity(searchIntent)
-            }
-        }
-        searchButton.setOnClickListener(searchButtonClickListener)
-
-        // =========================================================
-        // СПОСОБ 2: Через лямбду (Переход на экран Медиатеки)
-        // =========================================================
-        mediaButton.setOnClickListener {
-            val mediaIntent = Intent(this, com.artspb.playlistmaker.medialibrary.ui.MedialibraryActivity::class.java)
-            startActivity(mediaIntent)
-        }
-
-        // =========================================================
-        // Переход на экран Настроек (через лямбду)
-        // =========================================================
-        settingsButton.setOnClickListener {
-            // Создаем Intent для перехода на SettingsActivity
-            val settingsIntent = Intent(this, SettingsActivity::class.java)
-            startActivity(settingsIntent)
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        bottomNavigationView.setupWithNavController(navController)
+        
+        // 4. Показываем BottomNavigationView только на корневых экранах
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val isBottomNavigationVisible = destination.id in setOf(
+                R.id.searchFragment, R.id.medialibraryFragment, R.id.settingsFragment
+            )
+            bottomNavigationView.visibility = if (isBottomNavigationVisible) View.VISIBLE else View.GONE
         }
     }
 }

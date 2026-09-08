@@ -5,8 +5,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 
 class MedialibraryViewPagerAdapter(
-    fragmentActivity: FragmentActivity
-) : FragmentStateAdapter(fragmentActivity) {
+    fragmentManager: androidx.fragment.app.FragmentManager,
+    lifecycle: androidx.lifecycle.Lifecycle
+) : FragmentStateAdapter(fragmentManager, lifecycle) {
 
     override fun getItemCount(): Int {
         return 2 // У нас два таба: "Избранные треки" и "Плейлисты"

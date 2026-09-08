@@ -15,21 +15,14 @@
         android:name=".App">
         <activity
             android:name=".main.ui.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustNothing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".settings.ui.SettingsActivity" />
-        <activity android:name=".search.ui.SearchActivity" />
-        <activity
-            android:name=".medialibrary.ui.MedialibraryActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <activity android:name=".player.ui.MediaActivity" />
     </application>
 
 </manifest>
