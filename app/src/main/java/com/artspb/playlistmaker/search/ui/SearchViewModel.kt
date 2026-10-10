@@ -44,7 +44,8 @@ class SearchViewModel(
     fun searchRequest(newSearchText: String) {
         if (newSearchText.isNotEmpty()) {
             _state.postValue(SearchState.Loading)
-            viewModelScope.launch {
+            searchJob?.cancel()
+            searchJob = viewModelScope.launch {
                 tracksInteractor.searchTracks(newSearchText).collect { pair ->
                     val foundTracks = pair.first
                     val errorMessage = pair.second

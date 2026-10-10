@@ -48,6 +48,8 @@ class RetrofitNetworkClient(
             try {
                 val response = itunesService.search(dto.expression)
                 response.apply { resultCode = 200 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 Response().apply { resultCode = 500 }
             }
