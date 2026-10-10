@@ -1,13 +1,15 @@
 package com.artspb.playlistmaker.player.ui
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
 import com.artspb.playlistmaker.search.domain.models.Track
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -25,27 +27,12 @@ class MediaViewModel(
     private val _trackInfo = MutableLiveData<Track>()
     val trackInfo: LiveData<Track> = _trackInfo
 
-    private val handler = Handler(Looper.getMainLooper())
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
     private var lastCurrentPosition = 0
     private var positionOffset = 0
-
-    private val updateTimerRunnable = object : Runnable {
-        override fun run() {
-            if (_playerState.value == PlayerState.PLAYING) {
-                val currentPosition = audioPlayer.getCurrentPosition()
-                if (lastCurrentPosition - currentPosition > 1000) {
-                    positionOffset += lastCurrentPosition - currentPosition
-                }
-                lastCurrentPosition = currentPosition
-
-                val displayTime = currentPosition + positionOffset
-                _progressTime.value = dateFormat.format(displayTime)
-                handler.postDelayed(this, UPDATE_TIMER_DELAY)
-            }
-        }
-    }
+    
+    private var timerJob: Job? = null
 
     init {
         _trackInfo.value = track
@@ -97,18 +84,28 @@ class MediaViewModel(
     }
 
     private fun startTimerUpdate() {
-        val currentPosition = audioPlayer.getCurrentPosition()
-        val displayTime = currentPosition + positionOffset
-        _progressTime.value = dateFormat.format(displayTime)
-        handler.postDelayed(updateTimerRunnable, UPDATE_TIMER_DELAY)
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (_playerState.value == PlayerState.PLAYING) {
+                val currentPosition = audioPlayer.getCurrentPosition()
+                if (lastCurrentPosition - currentPosition > 1000) {
+                    positionOffset += lastCurrentPosition - currentPosition
+                }
+                lastCurrentPosition = currentPosition
+
+                val displayTime = currentPosition + positionOffset
+                _progressTime.value = dateFormat.format(displayTime)
+                delay(UPDATE_TIMER_DELAY)
+            }
+        }
     }
 
     private fun pauseTimer() {
-        handler.removeCallbacks(updateTimerRunnable)
+        timerJob?.cancel()
     }
 
     private fun resetTimer() {
-        handler.removeCallbacks(updateTimerRunnable)
+        timerJob?.cancel()
         _progressTime.value = "00:00"
         lastCurrentPosition = 0
         positionOffset = 0
@@ -117,7 +114,7 @@ class MediaViewModel(
     override fun onCleared() {
         super.onCleared()
         audioPlayer.releasePlayer()
-        handler.removeCallbacks(updateTimerRunnable)
+        timerJob?.cancel()
     }
 
     companion object {

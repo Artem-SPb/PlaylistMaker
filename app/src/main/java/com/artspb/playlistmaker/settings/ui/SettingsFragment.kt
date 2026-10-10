@@ -1,4 +1,4 @@
-﻿package com.artspb.playlistmaker.settings.ui
+package com.artspb.playlistmaker.settings.ui
 
 import android.os.Bundle
 import android.view.LayoutInflater

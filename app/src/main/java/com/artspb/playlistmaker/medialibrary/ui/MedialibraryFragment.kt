@@ -1,4 +1,4 @@
-﻿package com.artspb.playlistmaker.medialibrary.ui
+package com.artspb.playlistmaker.medialibrary.ui
 
 import android.os.Bundle
 import android.view.LayoutInflater

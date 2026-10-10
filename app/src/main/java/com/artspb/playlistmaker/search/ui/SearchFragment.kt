@@ -1,10 +1,8 @@
-﻿package com.artspb.playlistmaker.search.ui
+package com.artspb.playlistmaker.search.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -14,8 +12,11 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.artspb.playlistmaker.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.artspb.playlistmaker.databinding.FragmentSearchBinding
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.ui.models.SearchState
@@ -31,7 +32,6 @@ class SearchFragment : Fragment() {
     private lateinit var trackAdapter: TrackAdapter
     private lateinit var historyAdapter: TrackAdapter
 
-    private val handler = Handler(Looper.getMainLooper())
     private var isClickAllowed = true
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -163,14 +163,21 @@ class SearchFragment : Fragment() {
         val current = isClickAllowed
         if (isClickAllowed) {
             isClickAllowed = false
-            handler.postDelayed({ isClickAllowed = true }, CLICK_DEBOUNCE_DELAY)
+            lifecycleScope.launch {
+                delay(CLICK_DEBOUNCE_DELAY)
+                isClickAllowed = true
+            }
         }
         return current
     }
 
+    override fun onResume() {
+        super.onResume()
+        isClickAllowed = true
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        handler.removeCallbacksAndMessages(null)
         _binding = null
     }
 

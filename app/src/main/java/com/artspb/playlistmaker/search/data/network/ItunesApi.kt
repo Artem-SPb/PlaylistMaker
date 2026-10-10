@@ -1,7 +1,6 @@
 package com.artspb.playlistmaker.search.data.network
 
 import com.artspb.playlistmaker.search.data.dto.TracksSearchResponse
-import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -11,5 +10,5 @@ import retrofit2.http.Query
  */
 interface ItunesApi {
     @GET("/search?entity=song")
-    fun search(@Query("term") text: String): Call<TracksSearchResponse>
+    suspend fun search(@Query("term") text: String): TracksSearchResponse
 }
