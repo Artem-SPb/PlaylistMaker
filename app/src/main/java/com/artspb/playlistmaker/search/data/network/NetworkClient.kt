@@ -11,5 +11,5 @@ import com.artspb.playlistmaker.search.data.dto.Response
  *    в тестах, вообще не трогая код репозиториев и интеракторов.
  */
 interface NetworkClient {
-    fun doRequest(dto: Any): Response
+    suspend fun doRequest(dto: Any): Response
 }

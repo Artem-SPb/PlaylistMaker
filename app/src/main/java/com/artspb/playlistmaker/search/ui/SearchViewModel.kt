@@ -1,14 +1,16 @@
 package com.artspb.playlistmaker.search.ui
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.artspb.playlistmaker.search.domain.SearchHistoryInteractor
 import com.artspb.playlistmaker.search.domain.TracksInteractor
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.ui.models.SearchState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SearchViewModel(
     private val tracksInteractor: TracksInteractor,
@@ -18,25 +20,22 @@ class SearchViewModel(
     private val _state = MutableLiveData<SearchState>()
     val state: LiveData<SearchState> = _state
 
-    private val handler = Handler(Looper.getMainLooper())
     private var lastSearchText: String? = null
-    
-    private val searchRunnable = Runnable {
-        val newSearchText = lastSearchText ?: return@Runnable
-        searchRequest(newSearchText)
-    }
+    private var searchJob: Job? = null
 
     init {
-        // При инициализации я сразу показываю историю поиска, если она уже есть
         showHistoryOrEmpty()
     }
 
     fun searchDebounce(changedText: String) {
         if (lastSearchText == changedText) return
         lastSearchText = changedText
-        handler.removeCallbacks(searchRunnable)
+        searchJob?.cancel()
         if (changedText.isNotEmpty()) {
-            handler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_DELAY)
+            searchJob = viewModelScope.launch {
+                delay(SEARCH_DEBOUNCE_DELAY)
+                searchRequest(changedText)
+            }
         } else {
             showHistoryOrEmpty()
         }
@@ -45,19 +44,21 @@ class SearchViewModel(
     fun searchRequest(newSearchText: String) {
         if (newSearchText.isNotEmpty()) {
             _state.postValue(SearchState.Loading)
-            tracksInteractor.searchTracks(newSearchText, object : TracksInteractor.TracksConsumer {
-                override fun consume(foundTracks: List<Track>?, errorMessage: String?) {
-                    handler.post {
-                        if (errorMessage != null) {
-                            _state.value = SearchState.Error
-                        } else if (foundTracks.isNullOrEmpty()) {
-                            _state.value = SearchState.Empty
-                        } else {
-                            _state.value = SearchState.Content(foundTracks)
-                        }
+            searchJob?.cancel()
+            searchJob = viewModelScope.launch {
+                tracksInteractor.searchTracks(newSearchText).collect { pair ->
+                    val foundTracks = pair.first
+                    val errorMessage = pair.second
+                    
+                    if (errorMessage != null) {
+                        _state.value = SearchState.Error
+                    } else if (foundTracks.isNullOrEmpty()) {
+                        _state.value = SearchState.Empty
+                    } else {
+                        _state.value = SearchState.Content(foundTracks)
                     }
                 }
-            })
+            }
         }
     }
 
@@ -69,13 +70,12 @@ class SearchViewModel(
 
     fun onClearSearchClicked() {
         lastSearchText = ""
-        handler.removeCallbacks(searchRunnable)
+        searchJob?.cancel()
         showHistoryOrEmpty()
     }
 
     fun addTrackToHistory(track: Track) {
         searchHistoryInteractor.addTrack(track)
-        // Если сейчас на экране открыта история поиска, я обновляю её после добавления нового трека
         if (_state.value is SearchState.History) {
             showHistoryOrEmpty()
         }
@@ -95,10 +95,6 @@ class SearchViewModel(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        handler.removeCallbacks(searchRunnable)
-    }
     companion object {
         private const val SEARCH_DEBOUNCE_DELAY = 2000L
     }

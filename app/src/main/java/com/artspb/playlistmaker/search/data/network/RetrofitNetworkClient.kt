@@ -1,19 +1,19 @@
 package com.artspb.playlistmaker.search.data.network
 
-import com.artspb.playlistmaker.search.data.dto.Response
-import com.artspb.playlistmaker.search.data.dto.TracksSearchRequest
-
-
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import com.artspb.playlistmaker.search.data.dto.Response
+import com.artspb.playlistmaker.search.data.dto.TracksSearchRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Моя реализация сетевого клиента на базе Retrofit в слое Data.
  *
  * Почему я сделал именно так (Clean Architecture):
- * 1. Выполняю синхронный запрос `execute()`, так как вызов метода `doRequest` уже происходит
- *    в фоновом потоке из интерактора (через `ExecutorService`).
+ * 1. Теперь метод `doRequest` стал `suspend` и мы выполняем работу в `Dispatchers.IO`, 
+ *    чтобы не блокировать главный поток при вызове из корутин.
  * 2. Добавил проверку интернет-соединения через ConnectivityManager, как рекомендовали в теории 17 спринта.
  */
 class RetrofitNetworkClient(
@@ -35,7 +35,7 @@ class RetrofitNetworkClient(
         return false
     }
 
-    override fun doRequest(dto: Any): Response {
+    override suspend fun doRequest(dto: Any): Response {
         if (!isConnected()) {
             return Response().apply { resultCode = -1 }
         }
@@ -44,20 +44,15 @@ class RetrofitNetworkClient(
             return Response().apply { resultCode = 400 }
         }
 
-        return try {
-            val response = itunesService.search(dto.expression).execute()
-            val body = response.body()
-            if (body != null && response.isSuccessful) {
-                body.apply { resultCode = response.code() }
-            } else {
-                Response().apply { resultCode = response.code() }
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = itunesService.search(dto.expression)
+                response.apply { resultCode = 200 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Response().apply { resultCode = 500 }
             }
-        } catch (e: Exception) {
-            Response().apply { resultCode = 500 }
         }
-    }
-
-    private companion object {
-        const val ITUNES_BASE_URL = "https://itunes.apple.com"
     }
 }
