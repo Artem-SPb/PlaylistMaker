@@ -4,7 +4,6 @@ import com.artspb.playlistmaker.search.data.dto.TracksSearchRequest
 import com.artspb.playlistmaker.search.data.dto.TracksSearchResponse
 import com.artspb.playlistmaker.search.data.dto.TrackDto
 import com.artspb.playlistmaker.search.data.network.NetworkClient
-import com.artspb.playlistmaker.medialibrary.data.db.AppDatabase
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.domain.TracksRepository
 import kotlinx.coroutines.flow.Flow
@@ -17,18 +16,16 @@ import kotlinx.coroutines.flow.flow
  * 1. Занимаюсь здесь маппингом (преобразованием) сетевых DTO-моделей `TrackDto` в чистые доменные сущности `Track`.
  * 2. Скрываю от слоя Domain любые детали того, как именно устроен сетевой ответ сервера (`Response.resultCode`).
  * 3. Сетевой запрос обернут в корутинный flow { }, чтобы возвращать данные асинхронным потоком.
- * 4. Проверяю идентификаторы найденных треков по базе данных избранного и выставляю флаг `isFavorite`.
+ * 4. Проверку на избранное я убрал из поиска по совету ревьюера — теперь актуальный статус проверяется во вьюмодели плеера при открытии трека, что быстрее и надежнее.
  */
 class TracksRepositoryImpl(
-    private val networkClient: NetworkClient,
-    private val appDatabase: AppDatabase
+    private val networkClient: NetworkClient
 ) : TracksRepository {
 
     override fun searchTracks(expression: String): Flow<Pair<List<Track>?, String?>> = flow {
         val response = networkClient.doRequest(TracksSearchRequest(expression))
         if (response.resultCode == 200) {
             val tracksSearchResponse = response as TracksSearchResponse
-            val favoriteTrackIds = appDatabase.trackDao().getFavoriteTrackIds()
             val tracks = tracksSearchResponse.results.map { dto ->
                 Track(
                     trackId = dto.trackId,
@@ -41,7 +38,7 @@ class TracksRepositoryImpl(
                     primaryGenreName = dto.primaryGenreName,
                     country = dto.country,
                     previewUrl = dto.previewUrl,
-                    isFavorite = favoriteTrackIds.contains(dto.trackId)
+                    isFavorite = false
                 )
             }
             emit(Pair(tracks, null))

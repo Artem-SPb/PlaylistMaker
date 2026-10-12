@@ -15,10 +15,12 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MediaViewModel(
-    private val track: Track,
+    track: Track,
     private val audioPlayer: AudioPlayerInteractor,
     private val favoritesInteractor: FavoritesInteractor
 ) : ViewModel() {
+
+    private var currentTrack: Track = track
 
     private val _playerState = MutableLiveData(PlayerState.DEFAULT)
     val playerState: LiveData<PlayerState> = _playerState
@@ -40,39 +42,40 @@ class MediaViewModel(
     private var timerJob: Job? = null
 
     init {
-        _trackInfo.value = track
-        _isFavorite.value = track.isFavorite
+        _trackInfo.value = currentTrack
+        _isFavorite.value = currentTrack.isFavorite
         checkFavoriteStatus()
         preparePlayer()
     }
 
     private fun checkFavoriteStatus() {
         viewModelScope.launch {
-            val isFavorite = favoritesInteractor.isFavoriteTrack(track.trackId)
+            val isFavorite = favoritesInteractor.isFavoriteTrack(currentTrack.trackId)
             _isFavorite.value = isFavorite
-            track.isFavorite = isFavorite
+            currentTrack = currentTrack.copy(isFavorite = isFavorite)
         }
     }
 
     fun onFavoriteClicked() {
         viewModelScope.launch {
             if (_isFavorite.value == true) {
-                favoritesInteractor.deleteTrack(track)
+                favoritesInteractor.deleteTrack(currentTrack)
                 _isFavorite.value = false
-                track.isFavorite = false
+                currentTrack = currentTrack.copy(isFavorite = false)
             } else {
-                favoritesInteractor.addTrack(track)
+                favoritesInteractor.addTrack(currentTrack)
                 _isFavorite.value = true
-                track.isFavorite = true
+                currentTrack = currentTrack.copy(isFavorite = true)
             }
         }
     }
 
     private fun preparePlayer() {
-        if (track.previewUrl.isNullOrEmpty()) return
+        val previewUrl = currentTrack.previewUrl
+        if (previewUrl.isNullOrEmpty()) return
 
         audioPlayer.preparePlayer(
-            url = track.previewUrl,
+            url = previewUrl,
             onPrepared = {
                 _playerState.postValue(PlayerState.PREPARED)
             },

@@ -10,6 +10,7 @@ import kotlinx.parcelize.Parcelize
  * 1. В этой модели нет никаких сетевых аннотаций (`@SerializedName`), чтобы слой Domain был полностью
  *    независим от внешних библиотек (Gson/Retrofit) и того, как данные приходят по сети.
  * 2. Для сетевого обмена я создал в слое Data отдельный `TrackDto`, который при получении мапится сюда.
+ * 3. Все поля сделал `val` (неизменяемыми), как рекомендовал ревьюер. Для изменения состояния использую copy-on-write (`.copy()`).
  */
 @Parcelize
 data class Track(
@@ -23,7 +24,7 @@ data class Track(
     val primaryGenreName: String,
     val country: String,
     val previewUrl: String?,
-    var isFavorite: Boolean = false
+    val isFavorite: Boolean = false
 ) : Parcelable {
     /**
      * Функция для получения ссылки на обложку в высоком качестве (512x512).
