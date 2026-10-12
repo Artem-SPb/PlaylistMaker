@@ -1,5 +1,7 @@
 package com.artspb.playlistmaker.di
 
+import com.artspb.playlistmaker.medialibrary.domain.db.FavoritesInteractor
+import com.artspb.playlistmaker.medialibrary.domain.db.FavoritesInteractorImpl
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractorImpl
 import com.artspb.playlistmaker.search.domain.SearchHistoryInteractor
@@ -32,5 +34,9 @@ val interactorModule = module {
 
     factory<AudioPlayerInteractor> {
         AudioPlayerInteractorImpl(get())
+    }
+
+    factory<FavoritesInteractor> {
+        FavoritesInteractorImpl(get())
     }
 }

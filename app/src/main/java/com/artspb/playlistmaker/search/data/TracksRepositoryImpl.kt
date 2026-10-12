@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.flow
  * 1. Занимаюсь здесь маппингом (преобразованием) сетевых DTO-моделей `TrackDto` в чистые доменные сущности `Track`.
  * 2. Скрываю от слоя Domain любые детали того, как именно устроен сетевой ответ сервера (`Response.resultCode`).
  * 3. Сетевой запрос обернут в корутинный flow { }, чтобы возвращать данные асинхронным потоком.
+ * 4. Проверку на избранное я убрал из поиска по совету ревьюера — теперь актуальный статус проверяется во вьюмодели плеера при открытии трека, что быстрее и надежнее.
  */
 class TracksRepositoryImpl(
     private val networkClient: NetworkClient
@@ -36,7 +37,8 @@ class TracksRepositoryImpl(
                     releaseDate = dto.releaseDate,
                     primaryGenreName = dto.primaryGenreName,
                     country = dto.country,
-                    previewUrl = dto.previewUrl
+                    previewUrl = dto.previewUrl,
+                    isFavorite = false
                 )
             }
             emit(Pair(tracks, null))

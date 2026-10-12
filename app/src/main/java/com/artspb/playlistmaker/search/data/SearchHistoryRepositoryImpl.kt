@@ -14,6 +14,7 @@ import com.google.gson.reflect.TypeToken
  * 1. Всю работу с JSON (сериализацию/десериализацию через `Gson`) и локальным хранилищем `SharedPreferences`
  *    я полностью изолировал внутри слоя данных.
  * 2. В домен и в UI возвращаются исключительно чистые доменные модели `Track`.
+ * 3. Проверку на избранное убрал из истории по замечанию ревьюера, чтобы не блокировать поток и не делать лишних запросов к БД при загрузке истории — статус трека теперь проверяется точечно на экране плеера.
  */
 class SearchHistoryRepositoryImpl(
     private val sharedPreferences: SharedPreferences,
@@ -35,7 +36,8 @@ class SearchHistoryRepositoryImpl(
                 releaseDate = dto.releaseDate,
                 primaryGenreName = dto.primaryGenreName,
                 country = dto.country,
-                previewUrl = dto.previewUrl
+                previewUrl = dto.previewUrl,
+                isFavorite = false
             )
         }
     }

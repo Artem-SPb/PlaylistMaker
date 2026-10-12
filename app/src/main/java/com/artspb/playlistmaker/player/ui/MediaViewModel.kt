@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artspb.playlistmaker.medialibrary.domain.db.FavoritesInteractor
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
 import com.artspb.playlistmaker.search.domain.models.Track
@@ -14,9 +15,12 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MediaViewModel(
-    private val track: Track,
-    private val audioPlayer: AudioPlayerInteractor
+    track: Track,
+    private val audioPlayer: AudioPlayerInteractor,
+    private val favoritesInteractor: FavoritesInteractor
 ) : ViewModel() {
+
+    private var currentTrack: Track = track
 
     private val _playerState = MutableLiveData(PlayerState.DEFAULT)
     val playerState: LiveData<PlayerState> = _playerState
@@ -27,6 +31,9 @@ class MediaViewModel(
     private val _trackInfo = MutableLiveData<Track>()
     val trackInfo: LiveData<Track> = _trackInfo
 
+    private val _isFavorite = MutableLiveData<Boolean>()
+    val isFavorite: LiveData<Boolean> = _isFavorite
+
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
     private var lastCurrentPosition = 0
@@ -35,15 +42,40 @@ class MediaViewModel(
     private var timerJob: Job? = null
 
     init {
-        _trackInfo.value = track
+        _trackInfo.value = currentTrack
+        _isFavorite.value = currentTrack.isFavorite
+        checkFavoriteStatus()
         preparePlayer()
     }
 
+    private fun checkFavoriteStatus() {
+        viewModelScope.launch {
+            val isFavorite = favoritesInteractor.isFavoriteTrack(currentTrack.trackId)
+            _isFavorite.value = isFavorite
+            currentTrack = currentTrack.copy(isFavorite = isFavorite)
+        }
+    }
+
+    fun onFavoriteClicked() {
+        viewModelScope.launch {
+            if (_isFavorite.value == true) {
+                favoritesInteractor.deleteTrack(currentTrack)
+                _isFavorite.value = false
+                currentTrack = currentTrack.copy(isFavorite = false)
+            } else {
+                favoritesInteractor.addTrack(currentTrack)
+                _isFavorite.value = true
+                currentTrack = currentTrack.copy(isFavorite = true)
+            }
+        }
+    }
+
     private fun preparePlayer() {
-        if (track.previewUrl.isNullOrEmpty()) return
+        val previewUrl = currentTrack.previewUrl
+        if (previewUrl.isNullOrEmpty()) return
 
         audioPlayer.preparePlayer(
-            url = track.previewUrl,
+            url = previewUrl,
             onPrepared = {
                 _playerState.postValue(PlayerState.PREPARED)
             },

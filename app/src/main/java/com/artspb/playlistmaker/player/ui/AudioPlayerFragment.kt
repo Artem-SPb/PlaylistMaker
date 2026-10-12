@@ -99,6 +99,16 @@ class AudioPlayerFragment : Fragment() {
         viewModel.progressTime.observe(viewLifecycleOwner) { timeString ->
             binding.playbackTimeTextView.text = timeString
         }
+
+        binding.favoriteButton.setOnClickListener {
+            viewModel.onFavoriteClicked()
+        }
+
+        viewModel.isFavorite.observe(viewLifecycleOwner) { isFavorite ->
+            binding.favoriteButton.setImageResource(
+                if (isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+            )
+        }
     }
 
     override fun onPause() {
