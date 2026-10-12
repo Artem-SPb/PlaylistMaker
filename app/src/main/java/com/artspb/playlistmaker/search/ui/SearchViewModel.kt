@@ -62,6 +62,12 @@ class SearchViewModel(
         }
     }
 
+    fun onFragmentResume() {
+        if (_state.value is SearchState.History) {
+            showHistoryOrEmpty()
+        }
+    }
+
     fun onFocusChanged(hasFocus: Boolean, text: String) {
         if (hasFocus && text.isEmpty()) {
             showHistoryOrEmpty()

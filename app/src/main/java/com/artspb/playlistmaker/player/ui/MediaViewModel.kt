@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.artspb.playlistmaker.medialibrary.domain.db.FavoritesInteractor
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
 import com.artspb.playlistmaker.search.domain.models.Track
@@ -15,7 +16,8 @@ import java.util.Locale
 
 class MediaViewModel(
     private val track: Track,
-    private val audioPlayer: AudioPlayerInteractor
+    private val audioPlayer: AudioPlayerInteractor,
+    private val favoritesInteractor: FavoritesInteractor
 ) : ViewModel() {
 
     private val _playerState = MutableLiveData(PlayerState.DEFAULT)
@@ -27,6 +29,9 @@ class MediaViewModel(
     private val _trackInfo = MutableLiveData<Track>()
     val trackInfo: LiveData<Track> = _trackInfo
 
+    private val _isFavorite = MutableLiveData<Boolean>()
+    val isFavorite: LiveData<Boolean> = _isFavorite
+
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
     private var lastCurrentPosition = 0
@@ -36,7 +41,31 @@ class MediaViewModel(
 
     init {
         _trackInfo.value = track
+        _isFavorite.value = track.isFavorite
+        checkFavoriteStatus()
         preparePlayer()
+    }
+
+    private fun checkFavoriteStatus() {
+        viewModelScope.launch {
+            val isFavorite = favoritesInteractor.isFavoriteTrack(track.trackId)
+            _isFavorite.value = isFavorite
+            track.isFavorite = isFavorite
+        }
+    }
+
+    fun onFavoriteClicked() {
+        viewModelScope.launch {
+            if (_isFavorite.value == true) {
+                favoritesInteractor.deleteTrack(track)
+                _isFavorite.value = false
+                track.isFavorite = false
+            } else {
+                favoritesInteractor.addTrack(track)
+                _isFavorite.value = true
+                track.isFavorite = true
+            }
+        }
     }
 
     private fun preparePlayer() {

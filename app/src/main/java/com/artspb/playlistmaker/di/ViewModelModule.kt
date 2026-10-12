@@ -17,13 +17,13 @@ val viewModelModule = module {
         SettingsViewModel(get(), get())
     }
     viewModel {
-        com.artspb.playlistmaker.medialibrary.ui.FavoritesViewModel()
+        com.artspb.playlistmaker.medialibrary.ui.FavoritesViewModel(get())
     }
     viewModel {
         com.artspb.playlistmaker.medialibrary.ui.PlaylistsViewModel()
     }
 
     viewModel { (track: Track) ->
-        MediaViewModel(track, get())
+        MediaViewModel(track, get(), get())
     }
 }

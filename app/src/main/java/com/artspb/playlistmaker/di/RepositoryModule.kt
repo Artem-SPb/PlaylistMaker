@@ -1,5 +1,7 @@
 package com.artspb.playlistmaker.di
 
+import com.artspb.playlistmaker.medialibrary.data.db.FavoritesRepositoryImpl
+import com.artspb.playlistmaker.medialibrary.domain.db.FavoritesRepository
 import com.artspb.playlistmaker.search.data.SearchHistoryRepositoryImpl
 import com.artspb.playlistmaker.search.data.TracksRepositoryImpl
 import com.artspb.playlistmaker.search.domain.SearchHistoryRepository
@@ -11,12 +13,16 @@ import org.koin.dsl.module
 
 val repositoryModule = module {
 
+    single<FavoritesRepository> {
+        FavoritesRepositoryImpl(get(), get())
+    }
+
     single<TracksRepository> {
-        TracksRepositoryImpl(get())
+        TracksRepositoryImpl(get(), get())
     }
 
     single<SearchHistoryRepository> {
-        SearchHistoryRepositoryImpl(get(), get())
+        SearchHistoryRepositoryImpl(get(), get(), get())
     }
 
     single<SettingsRepository> {

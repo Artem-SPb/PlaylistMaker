@@ -174,6 +174,7 @@ class SearchFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         isClickAllowed = true
+        viewModel.onFragmentResume()
     }
 
     override fun onDestroyView() {

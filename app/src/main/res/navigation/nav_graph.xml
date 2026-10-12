@@ -20,7 +20,11 @@
         android:id="@+id/medialibraryFragment"
         android:name="com.artspb.playlistmaker.medialibrary.ui.MedialibraryFragment"
         android:label="MedialibraryFragment"
-        tools:layout="@layout/fragment_medialibrary" />
+        tools:layout="@layout/fragment_medialibrary">
+        <action
+            android:id="@+id/action_medialibraryFragment_to_audioPlayerFragment"
+            app:destination="@id/audioPlayerFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/settingsFragment"

@@ -11,12 +11,22 @@ import com.artspb.playlistmaker.search.data.network.RetrofitNetworkClient
 import com.artspb.playlistmaker.sharing.data.ExternalNavigatorImpl
 import com.artspb.playlistmaker.sharing.domain.ExternalNavigator
 import com.google.gson.Gson
+import androidx.room.Room
+import com.artspb.playlistmaker.medialibrary.data.db.AppDatabase
+import com.artspb.playlistmaker.medialibrary.data.db.TrackDbConvertor
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 val dataModule = module {
+
+    single {
+        Room.databaseBuilder(androidContext(), AppDatabase::class.java, "database.db")
+            .build()
+    }
+
+    factory { TrackDbConvertor() }
 
     single<ItunesApi> {
         Retrofit.Builder()
