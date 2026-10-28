@@ -5,8 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artspb.playlistmaker.medialibrary.domain.db.FavoritesInteractor
+import com.artspb.playlistmaker.medialibrary.domain.db.PlaylistsInteractor
+import com.artspb.playlistmaker.medialibrary.domain.models.Playlist
 import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
+import com.artspb.playlistmaker.player.ui.models.AddTrackToPlaylistState
 import com.artspb.playlistmaker.search.domain.models.Track
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -17,7 +20,8 @@ import java.util.Locale
 class MediaViewModel(
     track: Track,
     private val audioPlayer: AudioPlayerInteractor,
-    private val favoritesInteractor: FavoritesInteractor
+    private val favoritesInteractor: FavoritesInteractor,
+    private val playlistsInteractor: PlaylistsInteractor
 ) : ViewModel() {
 
     private var currentTrack: Track = track
@@ -34,12 +38,19 @@ class MediaViewModel(
     private val _isFavorite = MutableLiveData<Boolean>()
     val isFavorite: LiveData<Boolean> = _isFavorite
 
+    private val _playlists = MutableLiveData<List<Playlist>>(emptyList())
+    val playlists: LiveData<List<Playlist>> = _playlists
+
+    private val _addTrackState = MutableLiveData<AddTrackToPlaylistState?>()
+    val addTrackState: LiveData<AddTrackToPlaylistState?> = _addTrackState
+
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
     private var lastCurrentPosition = 0
     private var positionOffset = 0
     
     private var timerJob: Job? = null
+    private var playlistsJob: Job? = null
 
     init {
         _trackInfo.value = currentTrack
@@ -68,6 +79,30 @@ class MediaViewModel(
                 currentTrack = currentTrack.copy(isFavorite = true)
             }
         }
+    }
+
+    fun loadPlaylists() {
+        playlistsJob?.cancel()
+        playlistsJob = viewModelScope.launch {
+            playlistsInteractor.getPlaylists().collect { playlists ->
+                _playlists.postValue(playlists)
+            }
+        }
+    }
+
+    fun onPlaylistClicked(playlist: Playlist) {
+        if (playlist.trackIds.contains(currentTrack.trackId)) {
+            _addTrackState.value = AddTrackToPlaylistState.AlreadyExists(playlist.name)
+        } else {
+            viewModelScope.launch {
+                playlistsInteractor.addTrackToPlaylist(currentTrack, playlist.playlistId)
+                _addTrackState.postValue(AddTrackToPlaylistState.Added(playlist.name))
+            }
+        }
+    }
+
+    fun resetAddTrackState() {
+        _addTrackState.value = null
     }
 
     private fun preparePlayer() {
@@ -147,6 +182,7 @@ class MediaViewModel(
         super.onCleared()
         audioPlayer.releasePlayer()
         timerJob?.cancel()
+        playlistsJob?.cancel()
     }
 
     companion object {
