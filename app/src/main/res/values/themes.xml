@@ -88,4 +88,17 @@
         <item name="fontFamily">@font/ys_display_regular</item>
         <item name="android:textSize">12sp</item>
     </style>
+
+    <!-- Стиль для полей ввода на экране создания плейлиста -->
+    <style name="PlaylistTextInputLayoutStyle" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/text_input_box_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">1dp</item>
+        <item name="boxCornerRadiusTopStart">4dp</item>
+        <item name="boxCornerRadiusTopEnd">4dp</item>
+        <item name="boxCornerRadiusBottomStart">4dp</item>
+        <item name="boxCornerRadiusBottomEnd">4dp</item>
+        <item name="hintTextColor">@color/yp_blue</item>
+        <item name="android:textColorHint">@color/primary_text_color</item>
+    </style>
 </resources>

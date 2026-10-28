@@ -24,6 +24,9 @@
         <action
             android:id="@+id/action_medialibraryFragment_to_audioPlayerFragment"
             app:destination="@id/audioPlayerFragment" />
+        <action
+            android:id="@+id/action_medialibraryFragment_to_createPlaylistFragment"
+            app:destination="@id/createPlaylistFragment" />
     </fragment>
 
     <fragment
@@ -40,6 +43,15 @@
         <argument
             android:name="track"
             app:argType="com.artspb.playlistmaker.search.domain.models.Track" />
+        <action
+            android:id="@+id/action_audioPlayerFragment_to_createPlaylistFragment"
+            app:destination="@id/createPlaylistFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/createPlaylistFragment"
+        android:name="com.artspb.playlistmaker.medialibrary.ui.CreatePlaylistFragment"
+        android:label="CreatePlaylistFragment"
+        tools:layout="@layout/fragment_create_playlist" />
 
 </navigation>
