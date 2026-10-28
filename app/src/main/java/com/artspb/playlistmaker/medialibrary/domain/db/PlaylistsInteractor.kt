@@ -10,6 +10,6 @@ import kotlinx.coroutines.flow.Flow
 interface PlaylistsInteractor {
     suspend fun createPlaylist(name: String, description: String, coverImagePath: String?)
     fun getPlaylists(): Flow<List<Playlist>>
-    suspend fun addTrackToPlaylist(track: Track, playlist: Playlist)
-    suspend fun saveImageToPrivateStorage(uriString: String): String
+    suspend fun addTrackToPlaylist(track: Track, playlistId: Long)
+    suspend fun saveImageToPrivateStorage(uriString: String): String?
 }

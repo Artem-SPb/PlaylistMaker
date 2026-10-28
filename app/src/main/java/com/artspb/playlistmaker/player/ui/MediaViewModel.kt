@@ -95,7 +95,7 @@ class MediaViewModel(
             _addTrackState.value = AddTrackToPlaylistState.AlreadyExists(playlist.name)
         } else {
             viewModelScope.launch {
-                playlistsInteractor.addTrackToPlaylist(currentTrack, playlist)
+                playlistsInteractor.addTrackToPlaylist(currentTrack, playlist.playlistId)
                 _addTrackState.postValue(AddTrackToPlaylistState.Added(playlist.name))
             }
         }

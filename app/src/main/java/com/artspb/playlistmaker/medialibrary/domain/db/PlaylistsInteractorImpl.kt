@@ -19,11 +19,11 @@ class PlaylistsInteractorImpl(
         return playlistsRepository.getPlaylists()
     }
 
-    override suspend fun addTrackToPlaylist(track: Track, playlist: Playlist) {
-        playlistsRepository.addTrackToPlaylist(track, playlist)
+    override suspend fun addTrackToPlaylist(track: Track, playlistId: Long) {
+        playlistsRepository.addTrackToPlaylist(track, playlistId)
     }
 
-    override suspend fun saveImageToPrivateStorage(uriString: String): String {
+    override suspend fun saveImageToPrivateStorage(uriString: String): String? {
         return playlistsRepository.saveImageToPrivateStorage(uriString)
     }
 }

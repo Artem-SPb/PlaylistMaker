@@ -22,10 +22,10 @@ import java.io.FileOutputStream
  *
  * Почему я сделал именно так (Clean Architecture):
  * 1. Передаю сюда напрямую `PlaylistDao` и `PlaylistTrackDao`, а не всю базу данных.
- * 2. При добавлении трека в плейлист сначала сохраняю сам трек в таблицу `playlist_tracks_table`,
- *    а затем обновляю список ID треков и счётчик в самом плейлисте через copy-on-write.
- * 3. Копирую файл выбранной обложки во внутреннее хранилище приложения (`getExternalFilesDir`),
- *    чтобы картинка оставалась доступной даже после удаления оригинала пользователем.
+ * 2. В `addTrackToPlaylist` принимаю `playlistId: Long` (по совету ревьюера, чтобы не гонять тяжелые объекты между слоями).
+ *    Получаю актуальную запись плейлиста по ID, сохраняю трек в `playlist_tracks_table` и обновляю список ID треков и счётчик.
+ * 3. При сохранении обложки в приватное хранилище использую `runCatching` и проверку результата `decodeStream` на `null`,
+ *    чтобы при поврежденном или неподдерживаемом файле приложение не падало с NPE и не оставляло пустой файл.
  */
 class PlaylistsRepositoryImpl(
     private val context: Context,
@@ -51,7 +51,10 @@ class PlaylistsRepositoryImpl(
         }
     }
 
-    override suspend fun addTrackToPlaylist(track: Track, playlist: Playlist) {
+    override suspend fun addTrackToPlaylist(track: Track, playlistId: Long) {
+        val playlistEntity = playlistDao.getPlaylistById(playlistId) ?: return
+        val playlist = playlistDbConvertor.map(playlistEntity)
+
         playlistTrackDao.insertTrack(playlistDbConvertor.mapToPlaylistTrackEntity(track))
         val updatedTrackIds = playlist.trackIds + track.trackId
         val updatedPlaylist = playlist.copy(
@@ -61,19 +64,22 @@ class PlaylistsRepositoryImpl(
         playlistDao.updatePlaylist(playlistDbConvertor.map(updatedPlaylist))
     }
 
-    override suspend fun saveImageToPrivateStorage(uriString: String): String = withContext(Dispatchers.IO) {
-        val uri = Uri.parse(uriString)
-        val filePath = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "playlist_covers")
-        if (!filePath.exists()) {
-            filePath.mkdirs()
-        }
-        val file = File(filePath, "cover_${System.currentTimeMillis()}.jpg")
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(file).use { outputStream ->
+    override suspend fun saveImageToPrivateStorage(uriString: String): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val uri = Uri.parse(uriString)
+            val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 BitmapFactory.decodeStream(inputStream)
-                    .compress(Bitmap.CompressFormat.JPEG, 30, outputStream)
+            } ?: return@withContext null
+
+            val filePath = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "playlist_covers")
+            if (!filePath.exists()) {
+                filePath.mkdirs()
             }
-        }
-        file.absolutePath
+            val file = File(filePath, "cover_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 30, outputStream)
+            }
+            file.absolutePath
+        }.getOrNull()
     }
 }

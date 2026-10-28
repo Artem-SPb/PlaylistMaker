@@ -38,6 +38,7 @@ class CreatePlaylistFragment : Fragment() {
     private val viewModel by viewModel<CreatePlaylistViewModel>()
 
     private var selectedImageUri: Uri? = null
+    private var previousSoftInputMode: Int? = null
 
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -58,6 +59,7 @@ class CreatePlaylistFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        previousSoftInputMode = requireActivity().window.attributes.softInputMode
         requireActivity().window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
 
         savedInstanceState?.getString(KEY_SELECTED_URI)?.let { uriString ->
@@ -160,7 +162,9 @@ class CreatePlaylistFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        requireActivity().window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        previousSoftInputMode?.let {
+            requireActivity().window.setSoftInputMode(it)
+        }
         _binding = null
     }
 
