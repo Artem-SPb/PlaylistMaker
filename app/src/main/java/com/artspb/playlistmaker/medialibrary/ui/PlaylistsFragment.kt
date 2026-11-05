@@ -17,8 +17,8 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
  *
  * Почему я сделал именно так:
  * 1. Использую `GridLayoutManager` с 2 колонками для отображения карточек плейлистов.
- * 2. При нажатии на кнопку «Новый плейлист» перехожу на `CreatePlaylistFragment` через Navigation Component.
- * 3. В `onResume()` обновляю данные, чтобы после возвращения с экрана создания плейлиста список всегда был актуальным.
+ * 2. При нажатии на кнопку «Новый плейлист» перехожу на `CreatePlaylistFragment`,
+ *    а при нажатии на карточку плейлиста — на экран просмотра `PlaylistDetailsFragment`, передавая `playlistId`.
  */
 class PlaylistsFragment : Fragment() {
 
@@ -28,7 +28,11 @@ class PlaylistsFragment : Fragment() {
     private val viewModel by viewModel<PlaylistsViewModel>()
 
     private val playlistAdapter by lazy {
-        PlaylistGridAdapter()
+        PlaylistGridAdapter { playlist ->
+            val action = MedialibraryFragmentDirections
+                .actionMedialibraryFragmentToPlaylistDetailsFragment(playlist.playlistId)
+            findNavController().navigate(action)
+        }
     }
 
     override fun onCreateView(

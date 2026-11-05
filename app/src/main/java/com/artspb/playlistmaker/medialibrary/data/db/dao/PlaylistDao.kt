@@ -1,6 +1,7 @@
 package com.artspb.playlistmaker.medialibrary.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -20,9 +21,18 @@ interface PlaylistDao {
     @Update
     suspend fun updatePlaylist(playlist: PlaylistEntity)
 
+    @Delete
+    suspend fun deletePlaylist(playlist: PlaylistEntity)
+
     @Query("SELECT * FROM playlists_table ORDER BY playlistId DESC")
     fun getPlaylists(): Flow<List<PlaylistEntity>>
 
+    @Query("SELECT * FROM playlists_table")
+    suspend fun getPlaylistsList(): List<PlaylistEntity>
+
     @Query("SELECT * FROM playlists_table WHERE playlistId = :playlistId")
     suspend fun getPlaylistById(playlistId: Long): PlaylistEntity?
+
+    @Query("SELECT * FROM playlists_table WHERE playlistId = :playlistId")
+    fun observePlaylistById(playlistId: Long): Flow<PlaylistEntity?>
 }

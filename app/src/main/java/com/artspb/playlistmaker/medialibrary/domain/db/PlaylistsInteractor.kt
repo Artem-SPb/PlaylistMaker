@@ -9,7 +9,12 @@ import kotlinx.coroutines.flow.Flow
  */
 interface PlaylistsInteractor {
     suspend fun createPlaylist(name: String, description: String, coverImagePath: String?)
+    suspend fun updatePlaylist(playlist: Playlist)
     fun getPlaylists(): Flow<List<Playlist>>
+    fun getPlaylistById(playlistId: Long): Flow<Playlist?>
+    fun getTracksByIds(trackIds: List<Long>): Flow<List<Track>>
     suspend fun addTrackToPlaylist(track: Track, playlistId: Long)
+    suspend fun removeTrackFromPlaylist(trackId: Long, playlistId: Long)
+    suspend fun deletePlaylist(playlistId: Long)
     suspend fun saveImageToPrivateStorage(uriString: String): String?
 }

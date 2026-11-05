@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,22 +21,20 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
- * Мой фрагмент для экрана создания нового плейлиста (слой UI).
+ * Мой базовый фрагмент для экрана создания нового плейлиста (слой UI).
  *
- * Почему я сделал именно так:
- * 1. Использую стандартный системный Photo Picker (`PickVisualMedia`) для выбора обложки из галереи без лишних разрешений.
- * 2. Кнопка «Создать» активируется только тогда, когда поле «Название» не пустое.
- * 3. Перехватываю нажатие кнопки «Назад» (как тулбара, так и системной через `OnBackPressedCallback`):
- *    если пользователь уже выбрал обложку или ввёл текст, показываю диалог подтверждения выхода.
+ * Почему я сделал класс и ключевые методы `open`:
+ * Чтобы `EditPlaylistFragment` мог унаследовать всю вёрстку, выбор фото из галереи и валидацию полей,
+ * переопределив только заголовки, предзаполнение данных и поведение кнопок «Сохранить» и «Назад».
  */
-class CreatePlaylistFragment : Fragment() {
+open class CreatePlaylistFragment : Fragment() {
 
     private var _binding: FragmentCreatePlaylistBinding? = null
-    private val binding get() = _binding!!
+    protected val binding get() = _binding!!
 
-    private val viewModel by viewModel<CreatePlaylistViewModel>()
+    protected open val viewModel by viewModel<CreatePlaylistViewModel>()
 
-    private var selectedImageUri: Uri? = null
+    protected var selectedImageUri: Uri? = null
     private var previousSoftInputMode: Int? = null
 
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -83,12 +80,7 @@ class CreatePlaylistFragment : Fragment() {
         }
 
         binding.createButton.setOnClickListener {
-            val name = binding.nameEditText.text?.toString().orEmpty()
-            val description = binding.descriptionEditText.text?.toString().orEmpty()
-            if (name.isNotBlank()) {
-                binding.createButton.isEnabled = false
-                viewModel.createPlaylist(name, description, selectedImageUri?.toString())
-            }
+            onSubmitClicked()
         }
 
         binding.backButton.setOnClickListener {
@@ -116,11 +108,20 @@ class CreatePlaylistFragment : Fragment() {
         }
     }
 
-    private fun showSelectedCover(uri: Uri) {
+    protected open fun onSubmitClicked() {
+        val name = binding.nameEditText.text?.toString().orEmpty()
+        val description = binding.descriptionEditText.text?.toString().orEmpty()
+        if (name.isNotBlank()) {
+            binding.createButton.isEnabled = false
+            viewModel.createPlaylist(name, description, selectedImageUri?.toString())
+        }
+    }
+
+    protected fun showSelectedCover(model: Any) {
         val cornerRadius = resources.getDimensionPixelSize(R.dimen.player_cover_corner_radius)
         binding.coverImageView.background = null
         Glide.with(this)
-            .load(uri)
+            .load(model)
             .transform(CenterCrop(), RoundedCorners(cornerRadius))
             .into(binding.coverImageView)
     }
@@ -132,7 +133,7 @@ class CreatePlaylistFragment : Fragment() {
         return hasImage || hasName || hasDescription
     }
 
-    private fun handleBackNavigation() {
+    protected open fun handleBackNavigation() {
         if (hasUnsavedChanges()) {
             showExitConfirmationDialog()
         } else {

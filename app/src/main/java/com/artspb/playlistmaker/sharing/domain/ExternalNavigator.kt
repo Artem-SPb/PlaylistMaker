@@ -9,6 +9,7 @@ package com.artspb.playlistmaker.sharing.domain
  */
 interface ExternalNavigator {
     fun shareLink()
+    fun shareText(text: String)
     fun openEmail()
     fun openTerms()
 }

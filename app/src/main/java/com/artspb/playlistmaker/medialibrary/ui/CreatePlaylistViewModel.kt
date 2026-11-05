@@ -8,15 +8,14 @@ import com.artspb.playlistmaker.medialibrary.domain.db.PlaylistsInteractor
 import kotlinx.coroutines.launch
 
 /**
- * Моя ViewModel для экрана создания нового плейлиста (слой Presentation).
+ * Моя базовая ViewModel для экрана создания нового плейлиста (слой Presentation).
  *
- * Почему я сделал именно так:
- * 1. При нажатии на кнопку «Создать» сначала сохраняю обложку во внутреннее хранилище приложения (если она была выбрана),
- *    а затем создаю запись о плейлисте в базе данных Room через интерактор.
- * 2. После завершения сохранения отправляю событие через LiveData `playlistCreated`, чтобы фрагмент показал Toast и закрыл экран.
+ * Почему я сделал её `open`:
+ * Чтобы `EditPlaylistViewModel` могла наследоваться от неё и переиспользовать зависимость `playlistsInteractor`,
+ * как рекомендовано в подсказках задания.
  */
-class CreatePlaylistViewModel(
-    private val playlistsInteractor: PlaylistsInteractor
+open class CreatePlaylistViewModel(
+    protected val playlistsInteractor: PlaylistsInteractor
 ) : ViewModel() {
 
     private val _playlistCreated = MutableLiveData<String?>()
