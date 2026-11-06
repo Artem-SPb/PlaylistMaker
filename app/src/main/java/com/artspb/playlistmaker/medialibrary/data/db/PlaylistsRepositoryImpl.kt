@@ -22,10 +22,10 @@ import java.io.FileOutputStream
  *
  * Почему я сделал именно так (Clean Architecture):
  * 1. Передаю сюда напрямую `PlaylistDao` и `PlaylistTrackDao`, а не всю базу данных.
- * 2. В `addTrackToPlaylist` принимаю `playlistId: Long` (по совету ревьюера, чтобы не гонять тяжелые объекты между слоями).
- *    Получаю актуальную запись плейлиста по ID, сохраняю трек в `playlist_tracks_table` и обновляю список ID треков и счётчик.
- * 3. При сохранении обложки в приватное хранилище использую `runCatching` и проверку результата `decodeStream` на `null`,
- *    чтобы при поврежденном или неподдерживаемом файле приложение не падало с NPE и не оставляло пустой файл.
+ * 2. В `getTracksByIds` возвращаю треки в обратном порядке списка `trackIds` (последние добавленные — сверху),
+ *    как того требуют критерии задания.
+ * 3. После удаления трека из плейлиста или удаления всего плейлиста вызываю `cleanupUnusedTrack`,
+ *    который проверяет все оставшиеся плейлисты и удаляет трек из `playlist_tracks_table`, если он больше нигде не используется.
  */
 class PlaylistsRepositoryImpl(
     private val context: Context,
@@ -45,9 +45,28 @@ class PlaylistsRepositoryImpl(
         playlistDao.insertPlaylist(playlistDbConvertor.map(playlist))
     }
 
+    override suspend fun updatePlaylist(playlist: Playlist) {
+        playlistDao.updatePlaylist(playlistDbConvertor.map(playlist))
+    }
+
     override fun getPlaylists(): Flow<List<Playlist>> {
         return playlistDao.getPlaylists().map { entities ->
             entities.map { playlistDbConvertor.map(it) }
+        }
+    }
+
+    override fun getPlaylistById(playlistId: Long): Flow<Playlist?> {
+        return playlistDao.observePlaylistById(playlistId).map { entity ->
+            entity?.let { playlistDbConvertor.map(it) }
+        }
+    }
+
+    override fun getTracksByIds(trackIds: List<Long>): Flow<List<Track>> {
+        return playlistTrackDao.getAllTracks().map { entities ->
+            val entityById = entities.associateBy { it.trackId }
+            trackIds.asReversed().mapNotNull { id ->
+                entityById[id]?.let { playlistDbConvertor.mapToTrack(it) }
+            }
         }
     }
 
@@ -62,6 +81,38 @@ class PlaylistsRepositoryImpl(
             tracksCount = updatedTrackIds.size
         )
         playlistDao.updatePlaylist(playlistDbConvertor.map(updatedPlaylist))
+    }
+
+    override suspend fun removeTrackFromPlaylist(trackId: Long, playlistId: Long) {
+        val playlistEntity = playlistDao.getPlaylistById(playlistId) ?: return
+        val playlist = playlistDbConvertor.map(playlistEntity)
+
+        val updatedTrackIds = playlist.trackIds.filter { it != trackId }
+        val updatedPlaylist = playlist.copy(
+            trackIds = updatedTrackIds,
+            tracksCount = updatedTrackIds.size
+        )
+        playlistDao.updatePlaylist(playlistDbConvertor.map(updatedPlaylist))
+        cleanupUnusedTrack(trackId)
+    }
+
+    override suspend fun deletePlaylist(playlistId: Long) {
+        val playlistEntity = playlistDao.getPlaylistById(playlistId) ?: return
+        val playlist = playlistDbConvertor.map(playlistEntity)
+        val removedTrackIds = playlist.trackIds
+
+        playlistDao.deletePlaylist(playlistEntity)
+        removedTrackIds.forEach { trackId ->
+            cleanupUnusedTrack(trackId)
+        }
+    }
+
+    private suspend fun cleanupUnusedTrack(trackId: Long) {
+        val allPlaylists = playlistDao.getPlaylistsList().map { playlistDbConvertor.map(it) }
+        val isUsedInAnyPlaylist = allPlaylists.any { it.trackIds.contains(trackId) }
+        if (!isUsedInAnyPlaylist) {
+            playlistTrackDao.deleteTrackById(trackId)
+        }
     }
 
     override suspend fun saveImageToPrivateStorage(uriString: String): String? = withContext(Dispatchers.IO) {

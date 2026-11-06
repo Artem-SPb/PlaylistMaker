@@ -15,6 +15,10 @@ class SharingInteractorImpl(
         externalNavigator.shareLink()
     }
 
+    override fun shareText(text: String) {
+        externalNavigator.shareText(text)
+    }
+
     override fun openSupport() {
         externalNavigator.openEmail()
     }

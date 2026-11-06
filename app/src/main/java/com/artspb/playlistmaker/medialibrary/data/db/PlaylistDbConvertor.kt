@@ -8,11 +8,11 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 /**
- * Мой конвертер для преобразования между доменной моделью `Playlist` и сущностями БД (слой Data).
+ * Мой конвертер для преобразования между доменной моделью `Playlist`, `Track` и сущностями БД (слой Data).
  *
  * Почему я сделал именно так (Clean Architecture):
  * Вся работа с сериализацией списка `trackIds` в JSON через `Gson` изолирована здесь в слое Data,
- * чтобы слой Domain работал с обычным списком `List<Long>`.
+ * чтобы слой Domain работал с обычным списком `List<Long>` и чистыми доменными моделями.
  */
 class PlaylistDbConvertor(
     private val gson: Gson
@@ -58,6 +58,21 @@ class PlaylistDbConvertor(
             country = track.country,
             trackTimeMillis = track.trackTimeMillis,
             previewUrl = track.previewUrl
+        )
+    }
+
+    fun mapToTrack(entity: PlaylistTrackEntity): Track {
+        return Track(
+            trackId = entity.trackId,
+            trackName = entity.trackName,
+            artistName = entity.artistName,
+            trackTimeMillis = entity.trackTimeMillis,
+            artworkUrl100 = entity.artworkUrl100,
+            collectionName = entity.collectionName,
+            releaseDate = entity.releaseDate,
+            primaryGenreName = entity.primaryGenreName,
+            country = entity.country,
+            previewUrl = entity.previewUrl
         )
     }
 }

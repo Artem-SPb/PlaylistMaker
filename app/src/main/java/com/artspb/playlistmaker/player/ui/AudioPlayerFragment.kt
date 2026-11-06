@@ -5,13 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.artspb.playlistmaker.R
 import com.artspb.playlistmaker.databinding.FragmentAudioPlayerBinding
+import com.artspb.playlistmaker.medialibrary.ui.showPlaylistSnackbar
 import com.artspb.playlistmaker.player.domain.PlayerState
 import com.artspb.playlistmaker.player.ui.models.AddTrackToPlaylistState
 import com.bumptech.glide.Glide
@@ -65,11 +66,10 @@ class AudioPlayerFragment : Fragment() {
             binding.genreValue.text = currentTrack.primaryGenreName
             binding.countryValue.text = currentTrack.country
 
-            if (!currentTrack.collectionName.isNullOrEmpty()) {
+            val hasAlbum = !currentTrack.collectionName.isNullOrEmpty()
+            binding.albumGroup.isVisible = hasAlbum
+            if (hasAlbum) {
                 binding.albumValue.text = currentTrack.collectionName
-                binding.albumGroup.visibility = View.VISIBLE
-            } else {
-                binding.albumGroup.visibility = View.GONE
             }
 
             if (!currentTrack.releaseDate.isNullOrEmpty() && currentTrack.releaseDate.length >= 4) {
@@ -135,14 +135,7 @@ class AudioPlayerFragment : Fragment() {
 
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                when (newState) {
-                    BottomSheetBehavior.STATE_HIDDEN -> {
-                        _binding?.overlay?.visibility = View.GONE
-                    }
-                    else -> {
-                        _binding?.overlay?.visibility = View.VISIBLE
-                    }
-                }
+                _binding?.overlay?.isVisible = newState != BottomSheetBehavior.STATE_HIDDEN
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
@@ -175,20 +168,17 @@ class AudioPlayerFragment : Fragment() {
             when (state) {
                 is AddTrackToPlaylistState.Added -> {
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-                    com.artspb.playlistmaker.medialibrary.ui.showPlaylistSnackbar(
+                    showPlaylistSnackbar(
                         binding.root,
                         getString(R.string.track_added_to_playlist, state.playlistName)
                     )
-                    viewModel.resetAddTrackState()
                 }
                 is AddTrackToPlaylistState.AlreadyExists -> {
-                    com.artspb.playlistmaker.medialibrary.ui.showPlaylistSnackbar(
+                    showPlaylistSnackbar(
                         binding.root,
                         getString(R.string.track_already_in_playlist, state.playlistName)
                     )
-                    viewModel.resetAddTrackState()
                 }
-                null -> {}
             }
         }
     }

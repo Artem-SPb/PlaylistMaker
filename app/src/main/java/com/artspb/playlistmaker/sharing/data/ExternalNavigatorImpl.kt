@@ -18,11 +18,15 @@ class ExternalNavigatorImpl(
 ) : ExternalNavigator {
 
     override fun shareLink() {
+        shareText(context.getString(R.string.course_link))
+    }
+
+    override fun shareText(text: String) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, context.getString(R.string.course_link))
+            putExtra(Intent.EXTRA_TEXT, text)
         }
-        val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share_app))
+        val chooser = Intent.createChooser(shareIntent, null)
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
     }

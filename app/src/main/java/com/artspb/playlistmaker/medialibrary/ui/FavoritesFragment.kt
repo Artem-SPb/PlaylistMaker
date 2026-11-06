@@ -29,9 +29,9 @@ class FavoritesFragment : Fragment() {
     private var isClickAllowed = true
 
     private val trackAdapter by lazy {
-        TrackAdapter { track ->
+        TrackAdapter(clickListener = { track ->
             onTrackClick(track)
-        }
+        })
     }
 
     override fun onCreateView(

@@ -1,7 +1,10 @@
 package com.artspb.playlistmaker.di
 
+import com.artspb.playlistmaker.medialibrary.domain.models.Playlist
 import com.artspb.playlistmaker.medialibrary.ui.CreatePlaylistViewModel
+import com.artspb.playlistmaker.medialibrary.ui.EditPlaylistViewModel
 import com.artspb.playlistmaker.medialibrary.ui.FavoritesViewModel
+import com.artspb.playlistmaker.medialibrary.ui.PlaylistDetailsViewModel
 import com.artspb.playlistmaker.medialibrary.ui.PlaylistsViewModel
 import com.artspb.playlistmaker.player.ui.MediaViewModel
 import com.artspb.playlistmaker.search.domain.models.Track
@@ -30,6 +33,14 @@ val viewModelModule = module {
 
     viewModel {
         CreatePlaylistViewModel(get())
+    }
+
+    viewModel { (playlistId: Long) ->
+        PlaylistDetailsViewModel(playlistId, get(), get())
+    }
+
+    viewModel { (playlist: Playlist) ->
+        EditPlaylistViewModel(playlist, get())
     }
 
     viewModel { (track: Track) ->

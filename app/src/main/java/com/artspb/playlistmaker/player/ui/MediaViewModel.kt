@@ -11,6 +11,7 @@ import com.artspb.playlistmaker.player.domain.AudioPlayerInteractor
 import com.artspb.playlistmaker.player.domain.PlayerState
 import com.artspb.playlistmaker.player.ui.models.AddTrackToPlaylistState
 import com.artspb.playlistmaker.search.domain.models.Track
+import com.artspb.playlistmaker.util.SingleLiveData
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -41,14 +42,14 @@ class MediaViewModel(
     private val _playlists = MutableLiveData<List<Playlist>>(emptyList())
     val playlists: LiveData<List<Playlist>> = _playlists
 
-    private val _addTrackState = MutableLiveData<AddTrackToPlaylistState?>()
-    val addTrackState: LiveData<AddTrackToPlaylistState?> = _addTrackState
+    private val _addTrackState = SingleLiveData<AddTrackToPlaylistState>()
+    val addTrackState: LiveData<AddTrackToPlaylistState> = _addTrackState
 
     private val dateFormat by lazy { SimpleDateFormat("mm:ss", Locale.getDefault()) }
 
     private var lastCurrentPosition = 0
     private var positionOffset = 0
-    
+
     private var timerJob: Job? = null
     private var playlistsJob: Job? = null
 
@@ -99,10 +100,6 @@ class MediaViewModel(
                 _addTrackState.postValue(AddTrackToPlaylistState.Added(playlist.name))
             }
         }
-    }
-
-    fun resetAddTrackState() {
-        _addTrackState.value = null
     }
 
     private fun preparePlayer() {
