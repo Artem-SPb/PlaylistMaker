@@ -1,11 +1,11 @@
 package com.artspb.playlistmaker.main.ui
 
 import android.os.Bundle
-import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -34,13 +34,12 @@ class MainActivity : AppCompatActivity() {
 
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         bottomNavigationView.setupWithNavController(navController)
-        
+
         // 4. Показываем BottomNavigationView только на корневых экранах
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            val isBottomNavigationVisible = destination.id in setOf(
+            bottomNavigationView.isVisible = destination.id in setOf(
                 R.id.searchFragment, R.id.medialibraryFragment, R.id.settingsFragment
             )
-            bottomNavigationView.visibility = if (isBottomNavigationVisible) View.VISIBLE else View.GONE
         }
     }
 }

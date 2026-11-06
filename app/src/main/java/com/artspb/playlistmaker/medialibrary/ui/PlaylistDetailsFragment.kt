@@ -144,14 +144,7 @@ class PlaylistDetailsFragment : Fragment() {
 
         menuBottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                when (newState) {
-                    BottomSheetBehavior.STATE_HIDDEN -> {
-                        _binding?.overlay?.visibility = View.GONE
-                    }
-                    else -> {
-                        _binding?.overlay?.visibility = View.VISIBLE
-                    }
-                }
+                _binding?.overlay?.isVisible = newState != BottomSheetBehavior.STATE_HIDDEN
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {

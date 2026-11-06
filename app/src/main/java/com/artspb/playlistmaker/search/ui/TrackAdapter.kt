@@ -8,22 +8,13 @@ import com.artspb.playlistmaker.search.domain.models.Track
  * Адаптер для отображения списка треков, истории прослушиваний и треков внутри плейлиста (слой Presentation).
  *
  * Почему я сделал именно так:
- * Переиспользую `TrackViewHolder` и добавил вторичный конструктор с `longClickListener`,
- * чтобы на экране плейлиста обрабатывать долгое нажатие, а на остальных экранах сохранялся
- * привычный вызов `TrackAdapter { track -> ... }` с trailing lambda.
+ * Переиспользую `TrackViewHolder` и вынес опциональный `longClickListener` со значением по умолчанию `null`
+ * прямо в основной конструктор, чтобы на экране плейлиста обрабатывать долгое нажатие без лишних конструкторов.
  */
 class TrackAdapter(
-    private val clickListener: (Track) -> Unit
+    private val clickListener: (Track) -> Unit,
+    private val longClickListener: ((Track) -> Boolean)? = null
 ) : RecyclerView.Adapter<TrackViewHolder>() {
-
-    private var longClickListener: ((Track) -> Boolean)? = null
-
-    constructor(
-        clickListener: (Track) -> Unit,
-        longClickListener: (Track) -> Boolean
-    ) : this(clickListener) {
-        this.longClickListener = longClickListener
-    }
 
     var tracks: MutableList<Track> = mutableListOf()
 

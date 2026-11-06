@@ -97,14 +97,12 @@ open class CreatePlaylistFragment : Fragment() {
         )
 
         viewModel.playlistCreated.observe(viewLifecycleOwner) { createdPlaylistName ->
-            if (createdPlaylistName != null) {
-                val rootView = requireActivity().findViewById<View>(R.id.main)
-                showPlaylistSnackbar(
-                    rootView,
-                    getString(R.string.playlist_created_toast, createdPlaylistName)
-                )
-                findNavController().navigateUp()
-            }
+            val rootView = requireActivity().findViewById<View>(R.id.main)
+            showPlaylistSnackbar(
+                rootView,
+                getString(R.string.playlist_created_toast, createdPlaylistName)
+            )
+            findNavController().navigateUp()
         }
     }
 

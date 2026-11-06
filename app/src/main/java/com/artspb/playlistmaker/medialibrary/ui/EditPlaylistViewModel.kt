@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.artspb.playlistmaker.medialibrary.domain.db.PlaylistsInteractor
 import com.artspb.playlistmaker.medialibrary.domain.models.Playlist
+import com.artspb.playlistmaker.util.SingleLiveData
 import kotlinx.coroutines.launch
 
 /**
@@ -13,8 +14,8 @@ import kotlinx.coroutines.launch
  * Почему я сделал именно так:
  * 1. Наследуюсь от `CreatePlaylistViewModel`, не дублируя код создания.
  * 2. Передаю исходные данные плейлиста через `initialPlaylist` LiveData для предзаполнения полей экрана.
- * 3. При сохранении изменений копирую новую обложку в приватное хранилище (только если пользователь её поменял)
- *    и обновляю запись текущего плейлиста в БД с сохранением его `playlistId`, списка треков и счётчика.
+ * 3. При сохранении изменений копирую новую обложку в приватное хранилище (только если пользователь её поменял),
+ *    обновляю запись текущего плейлиста в БД и отправляю одноразовое событие `SingleLiveData` для закрытия экрана.
  */
 class EditPlaylistViewModel(
     private val playlist: Playlist,
@@ -24,7 +25,7 @@ class EditPlaylistViewModel(
     private val _initialPlaylist = MutableLiveData(playlist)
     val initialPlaylist: LiveData<Playlist> = _initialPlaylist
 
-    private val _playlistUpdated = MutableLiveData<Boolean>()
+    private val _playlistUpdated = SingleLiveData<Boolean>()
     val playlistUpdated: LiveData<Boolean> = _playlistUpdated
 
     fun savePlaylistChanges(name: String, description: String, newCoverUriString: String?) {

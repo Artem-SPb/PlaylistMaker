@@ -8,6 +8,7 @@ import com.artspb.playlistmaker.medialibrary.domain.db.PlaylistsInteractor
 import com.artspb.playlistmaker.medialibrary.domain.models.Playlist
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.sharing.domain.SharingInteractor
+import com.artspb.playlistmaker.util.SingleLiveData
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
  * 1. Подписываюсь на плейлист по его `playlistId` через Flow, а при каждом обновлении плейлиста
  *    получаю актуальный список его треков через `getTracksByIds`, поэтому любые изменения
  *    (удаление трека или редактирование информации) сразу реактивно обновляют UI и длительность.
- * 2. Для отправки списка треков в другие приложения использую `SharingInteractor`.
+ * 2. Для одноразового события удаления плейлиста использую `SingleLiveData`, чтобы оно не срабатывало повторно при повороте экрана.
+ * 3. Для отправки списка треков в другие приложения использую `SharingInteractor`.
  */
 class PlaylistDetailsViewModel(
     private val playlistId: Long,
@@ -32,7 +34,7 @@ class PlaylistDetailsViewModel(
     private val _tracks = MutableLiveData<List<Track>>(emptyList())
     val tracks: LiveData<List<Track>> = _tracks
 
-    private val _playlistDeleted = MutableLiveData<Boolean>()
+    private val _playlistDeleted = SingleLiveData<Boolean>()
     val playlistDeleted: LiveData<Boolean> = _playlistDeleted
 
     private var tracksJob: Job? = null

@@ -1,10 +1,10 @@
 package com.artspb.playlistmaker.medialibrary.ui
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.artspb.playlistmaker.medialibrary.domain.db.PlaylistsInteractor
+import com.artspb.playlistmaker.util.SingleLiveData
 import kotlinx.coroutines.launch
 
 /**
@@ -12,14 +12,14 @@ import kotlinx.coroutines.launch
  *
  * Почему я сделал её `open`:
  * Чтобы `EditPlaylistViewModel` могла наследоваться от неё и переиспользовать зависимость `playlistsInteractor`,
- * как рекомендовано в подсказках задания.
+ * как рекомендовано в подсказках задания. Для одноразового уведомления о создании плейлиста использую `SingleLiveData`.
  */
 open class CreatePlaylistViewModel(
     protected val playlistsInteractor: PlaylistsInteractor
 ) : ViewModel() {
 
-    private val _playlistCreated = MutableLiveData<String?>()
-    val playlistCreated: LiveData<String?> = _playlistCreated
+    private val _playlistCreated = SingleLiveData<String>()
+    val playlistCreated: LiveData<String> = _playlistCreated
 
     fun createPlaylist(name: String, description: String, coverUriString: String?) {
         viewModelScope.launch {

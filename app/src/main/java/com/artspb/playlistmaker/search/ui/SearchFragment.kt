@@ -15,11 +15,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.artspb.playlistmaker.R
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import com.artspb.playlistmaker.databinding.FragmentSearchBinding
 import com.artspb.playlistmaker.search.domain.models.Track
 import com.artspb.playlistmaker.search.ui.models.SearchState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SearchFragment : Fragment() {
@@ -43,12 +43,12 @@ class SearchFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        trackAdapter = TrackAdapter { track: Track ->
+        trackAdapter = TrackAdapter(clickListener = { track: Track ->
             onTrackClick(track)
-        }
-        historyAdapter = TrackAdapter { track: Track ->
+        })
+        historyAdapter = TrackAdapter(clickListener = { track: Track ->
             onTrackClick(track)
-        }
+        })
 
         binding.inputEditText.setOnFocusChangeListener { _, hasFocus ->
             viewModel.onFocusChanged(hasFocus, binding.inputEditText.text.toString())
